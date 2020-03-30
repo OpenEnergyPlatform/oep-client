@@ -7,6 +7,7 @@ setup(
     name="oep-client",
     version="0.1.0",
     description="client side tool for openenergy platform",
+    long_description_content_type='text/markdown',
     long_description=long_description,
     packages=["oep_client"],
     author="Christian Winger",
