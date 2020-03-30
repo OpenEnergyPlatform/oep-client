@@ -1,17 +1,12 @@
 # coding: utf-8
-
-__version__ = "0.0.0"
-
 import sys
 import logging
 from argparse import ArgumentParser
-
 from .client import OepClient
 
 logger = logging.getLogger()
 
-
-def setup_logging(loglevel):
+def setup_logging(loglevel='INFO'):
     if isinstance(loglevel, str):  # e.g. 'debug'/'DEBUG' -> logger.DEBUG
         loglevel = getattr(logging, loglevel.upper())
     formatter = logging.Formatter("[%(asctime)s %(levelname)7s] %(message)s")
@@ -25,6 +20,7 @@ def setup_logging(loglevel):
     h.setFormatter(formatter)
     h.setLevel(loglevel)
     logger.addHandler(h)
+
 
 
 def _main(
@@ -56,29 +52,23 @@ def _main(
         settings["tablename"] = tablename
     if token:
         settings["token"] = token
-    if sheet:
-        settings["sheet"] = sheet
-    if encoding:
-        settings["encoding"] = encoding
-    if delimiter:
-        settings["delimiter"] = delimiter
 
     cl = OepClient(**settings)
 
     if delete:
         if any((validate, create, upload_data, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
-        cl.delete()
+        cl.delete(metadata=metadata)
     elif download_data or download_metadata:  # download workflow
         if any((delete, validate, create, upload_data, update_metadata)):
             raise Exception(
                 "Cannot use action in combination with download_data/download_metadata"
             )
         if download_data:
-            df = cl.download_data()
-            cl.save_dataframe(df, download_data)
+            df = cl.download_data(metadata=metadata)
+            cl.save_dataframe(df, download_data, sheet=sheet, delimiter=delimiter, encoding=encoding)
         if download_metadata:
-            meta = cl.download_metadata()
+            meta = cl.download_metadata(metadata=metadata)
             cl.save_json(meta, download_metadata)
     elif create or upload_data or update_metadata or validate:  # upload workflow
         if any((delete, download_data, download_metadata)):
@@ -93,8 +83,8 @@ def _main(
         if create:
             cl.create(metadata)
         if upload_data:
-            df = cl.load_dataframe(upload_data)
-            cl.upload_data(df)
+            df = cl.load_dataframe(upload_data, sheet=sheet, delimiter=delimiter, encoding=encoding)
+            cl.upload_data(df, metadata=metadata)
         if update_metadata:
             cl.update_metadata(metadata)
     else:

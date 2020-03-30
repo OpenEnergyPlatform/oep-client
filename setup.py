@@ -8,7 +8,7 @@ setup(
     version="0.0.0",
     description="client side tool for openenergy platform",
     long_description=long_description,
-    packages=["oep-client"],
+    packages=["oep_client"],
     author="Christian Winger",
     author_email="c.winger@oeko.de",
     url="https://github.com/wingechr/oep-client",
@@ -19,7 +19,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            # 'CMD = package.module:function'
+            'oep-client = oep_client.script:main'
         ]
     },
     package_data={
