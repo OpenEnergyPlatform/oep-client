@@ -77,4 +77,15 @@ res.raise_for_status()  # check
 ```
 * You can repeat this if you want to upload your data in multiple batches.
 
+## Starting over: Deleting your table
+* While the table is still in the model draft, you can always delete the table and start over: 
+```
+# prepare api url
+url = API_URL + '/schema/model_draft/tables/' + TABLE_NAME
+
+# make request
+res = session.delete(url)
+res.raise_for_status() # check
+````
+
 
