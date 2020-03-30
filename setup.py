@@ -7,7 +7,7 @@ setup(
     packages=["oep_client"],
     author="Christian Winger",
     author_email="c.winger@oeko.de",
-    url="http://toolsfrek1.oeko.local/gitlab/c.winger/oekolib",
+    url="https://github.com/wingechr/oep-client",
     install_requires=["omi"],
     classifiers=[
         "Programming Language :: Python :: 3",
