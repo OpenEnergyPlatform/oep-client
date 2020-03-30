@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="oep-client",
-    version="0.0.0",
+    version="0.1.0",
     description="client side tool for openenergy platform",
     long_description=long_description,
     packages=["oep_client"],
