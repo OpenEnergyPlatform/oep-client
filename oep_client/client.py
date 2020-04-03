@@ -10,6 +10,7 @@ import omi.dialects.oep.parser
 
 logger = logging.getLogger()
 
+
 def fix_name(name):
     name_new = re.sub("[^a-z0-9_]+", "_", name.lower())
     if name_new != name:
@@ -33,11 +34,11 @@ class OepClient:
         }
         self.settings.update(settings)
         for k, v in self.settings.items():
-            logger.debug('%s = %s' % (k ,v))
+            logger.debug("%s = %s" % (k, v))
         self.session = requests.session()
         self.session.verify = self.settings["ssl_verify"]
-        if 'token' not in self.settings:
-            raise Exception('api token not given.')
+        if "token" not in self.settings:
+            raise Exception("api token not given.")
         self.session.headers = {"Authorization": "Token %(token)s" % self.settings}
 
     def request(self, method, url, jsondata=None):
@@ -115,7 +116,7 @@ class OepClient:
             # TODO: file bugreport: empty table returns invalid json (content = b']')
             res = res.json()
         except Exception as e:
-            logger.warning('Empty table')
+            logger.warning("Empty table")
             res = []
         df = pd.DataFrame(res)
         # df.set_index(['id'], inplace=True)  # make id column to index
@@ -141,7 +142,9 @@ class OepClient:
         return res
 
     @classmethod
-    def save_dataframe(cls, df, filepath, sheet=None, delimiter=',', encoding='utf-8', index=False):
+    def save_dataframe(
+        cls, df, filepath, sheet=None, delimiter=",", encoding="utf-8", index=False
+    ):
         """
         """
         if filepath.endswith(".xlsx"):
@@ -150,11 +153,7 @@ class OepClient:
             df.to_excel(filepath, sheet_name=sheet, index=index)
         elif filepath.endswith(".csv"):
             df.to_csv(
-                filepath,
-                encoding=encoding,
-                sep=delimiter,
-                na_rep="",
-                index=index
+                filepath, encoding=encoding, sep=delimiter, na_rep="", index=index
             )
         elif filepath.endswith(".json"):
             data = cls.convert_dataframe(df)
@@ -173,7 +172,7 @@ class OepClient:
         return data
 
     @classmethod
-    def load_dataframe(cls, filepath, sheet=None, delimiter=',', encoding='utf-8'):
+    def load_dataframe(cls, filepath, sheet=None, delimiter=",", encoding="utf-8"):
         """
         """
         if filepath.endswith(".xlsx"):
@@ -201,7 +200,7 @@ class OepClient:
             return json.load(f)
 
     @staticmethod
-    def save_json(data, filepath, encoding='utf-8'):
+    def save_json(data, filepath, encoding="utf-8"):
         logger.info("saving %s" % filepath)
         with open(filepath, "w", encoding=encoding) as f:
             return json.dump(data, f, sort_keys=True, indent=2)
@@ -244,7 +243,7 @@ class OepClient:
         try:
             name = metadata["resources"][0]["name"]
         except:
-            raise Exception('table name not found in metadata (name in resource[0])')
+            raise Exception("table name not found in metadata (name in resource[0])")
         return name
 
     def get_url(self, is_draft=False, metadata=None):
@@ -260,6 +259,3 @@ class OepClient:
         url = "%(protocol)s://%(host)s/api/%(api_version)s/schema/" % self.settings
         url += "%s/tables/%s/" % (schema, tablename)
         return url
-
-
-

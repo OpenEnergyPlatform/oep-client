@@ -6,7 +6,8 @@ from .client import OepClient
 
 logger = logging.getLogger()
 
-def setup_logging(loglevel='INFO'):
+
+def setup_logging(loglevel="INFO"):
     if isinstance(loglevel, str):  # e.g. 'debug'/'DEBUG' -> logger.DEBUG
         loglevel = getattr(logging, loglevel.upper())
     formatter = logging.Formatter("[%(asctime)s %(levelname)7s] %(message)s")
@@ -20,7 +21,6 @@ def setup_logging(loglevel='INFO'):
     h.setFormatter(formatter)
     h.setLevel(loglevel)
     logger.addHandler(h)
-
 
 
 def _main(
@@ -66,7 +66,9 @@ def _main(
             )
         if download_data:
             df = cl.download_data(metadata=metadata)
-            cl.save_dataframe(df, download_data, sheet=sheet, delimiter=delimiter, encoding=encoding)
+            cl.save_dataframe(
+                df, download_data, sheet=sheet, delimiter=delimiter, encoding=encoding
+            )
         if download_metadata:
             meta = cl.download_metadata(metadata=metadata)
             cl.save_json(meta, download_metadata)
@@ -83,7 +85,9 @@ def _main(
         if create:
             cl.create(metadata)
         if upload_data:
-            df = cl.load_dataframe(upload_data, sheet=sheet, delimiter=delimiter, encoding=encoding)
+            df = cl.load_dataframe(
+                upload_data, sheet=sheet, delimiter=delimiter, encoding=encoding
+            )
             cl.upload_data(df, metadata=metadata)
         if update_metadata:
             cl.update_metadata(metadata)

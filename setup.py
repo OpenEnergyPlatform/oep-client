@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="oep-client",
-    version="0.1.2",
+    version="0.1.3",
     description="client side tool for openenergy platform",
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     long_description=long_description,
     packages=["oep_client"],
     author="Christian Winger",
@@ -18,11 +18,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    entry_points={
-        "console_scripts": [
-            'oep-client = oep_client.script:main'
-        ]
-    },
+    entry_points={"console_scripts": ["oep-client = oep_client.script:main"]},
     package_data={
         # 'package.module: [file_patterns]'
     },
