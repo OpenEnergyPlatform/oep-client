@@ -1,12 +1,19 @@
 # coding: utf-8
 import sys
 import logging
-from argparse import ArgumentParser
+import argparse
 from .client import OepClient
 from .test import test as testscript
+from . import __version__  
 
 logger = logging.getLogger()
 
+# show version in help
+class ArgumentParser(argparse.ArgumentParser):
+    version_line = 'oep-client version %s' % __version__
+    def format_help(self):
+        help = super().format_help()
+        return self.version_line + '\n' + help
 
 def setup_logging(loglevel="INFO"):
     if isinstance(loglevel, str):  # e.g. 'debug'/'DEBUG' -> logger.DEBUG
