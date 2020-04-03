@@ -3,6 +3,7 @@ import sys
 import logging
 from argparse import ArgumentParser
 from .client import OepClient
+from .test import test as testscript
 
 logger = logging.getLogger()
 
@@ -38,6 +39,7 @@ def _main(
     encoding,
     delimiter,
     token,
+    test,
 ):
     # configure and validate settings
     if settings:
@@ -54,13 +56,18 @@ def _main(
         settings["token"] = token
 
     cl = OepClient(**settings)
-
-    if delete:
-        if any((validate, create, upload_data, download_data, download_metadata)):
+    if test:
+        if any(
+            (delete, validate, create, upload_data, download_data, download_metadata)
+        ):
+            raise Exception("Cannot use action in combination with test")
+        testscript(token)
+    elif delete:
+        if any((test, validate, create, upload_data, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
         cl.delete(metadata=metadata)
     elif download_data or download_metadata:  # download workflow
-        if any((delete, validate, create, upload_data, update_metadata)):
+        if any((test, delete, validate, create, upload_data, update_metadata)):
             raise Exception(
                 "Cannot use action in combination with download_data/download_metadata"
             )
@@ -73,7 +80,7 @@ def _main(
             meta = cl.download_metadata(metadata=metadata)
             cl.save_json(meta, download_metadata)
     elif create or upload_data or update_metadata or validate:  # upload workflow
-        if any((delete, download_data, download_metadata)):
+        if any((test, delete, download_data, download_metadata)):
             raise Exception(
                 "Cannot use action in combination with create/upload_data/update_metadata"
             )
@@ -131,6 +138,7 @@ def main():
         type=str,
         help="ERROR, WARNING, INFO, or DEBUG",
     )
+    ap.add_argument("--test", action="store_true", help="run test script")
 
     kwargs = vars(ap.parse_args())
     setup_logging(kwargs.pop("loglevel"))

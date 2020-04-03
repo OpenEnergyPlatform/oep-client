@@ -1,5 +1,79 @@
-# OEP client
-This document describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API. Prerequisite is that you are a registered user on the [OEP](https://openenergy-platform.org/user/register "OEP").
+# OEP Client
+
+This tool tries to make data sharing with the OEP as easy as possible. Common tasks are:
+
+* creating a table
+* uploading data
+* updating a table's metadata
+* downloading data
+* retrieving a table's metadata 
+* deleting a table (that you created)
+
+You can also always just use the API `(TODO: link to documentation)` directly if your tasks are more complex.  
+
+## Notes for Windows Users
+
+All the example commands below use `python3`, because we need python 3. Under Windows, it's most likely to be `python.exe` or just `python`.
+ 
+
+## Installation
+
+Install package `oep-client` from python package index with pip:
+
+```bash
+python3 -m pip install --upgrade oep-client
+```
+
+## Test
+
+There is a short test script that creates a table on the platform, uploads data and metadata, downloads them again 
+and finally deletes the table. You need to be [registered on the OEP platform](https://openenergy-platform.org/user/register) and have a valid API token
+
+You can run it either directly from the command prompt
+
+```
+python3 -m oep_client.test API_TOKEN
+```
+
+or in an interactive python environment
+
+```
+>>> from oep_client import testscript
+>>> testscript('API_TOKEN')
+```
+
+`TODO: example output if everything is ok`
+
+
+## Data and Metadata
+
+Supported filetypes for input data are: xslx, csv, json
+
+Metadata must be a json file that complies with the metadata specification of the OEP `(TODO: link)` 
+
+## Usage
+
+All tasks can be executed either directly as a comand line script (CLI) `oep-client` that comes with this package, or in a python environment.
+
+The CLI is very handy for standardized tasks as it requires just one command line, but is somewhat limited when for instance your input data is not in a very specific format.
+To see avaiblabe command line options, use
+```
+oep-client --help
+```
+
+In a python environment, you have more flexibility to prepare / clean your data before uploading it.
+
+
+### Creating a table
+
+```bash
+oep-client 
+```
+
+
+
+
+This document describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
 ## Create and upload data table(s)
 * The REST-API can be used with any language than can make HTTP(s) requests.
 

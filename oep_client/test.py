@@ -1,7 +1,6 @@
 # coding: utf-8
 import datetime
 from .client import OepClient
-from .script import setup_logging
 import pandas as pd
 import random
 from argparse import ArgumentParser
@@ -46,18 +45,3 @@ def test(token):
         print(metadata)
     finally:
         cl.delete()
-
-
-if __name__ == "__main__":
-    ap = ArgumentParser()
-    ap.add_argument("token", help="user token")
-    ap.add_argument(
-        "--loglevel",
-        "-l",
-        default="INFO",
-        type=str,
-        help="ERROR, WARNING, INFO, or DEBUG",
-    )
-    kwargs = vars(ap.parse_args())
-    setup_logging(kwargs.pop("loglevel"))
-    test(**kwargs)
