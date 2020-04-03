@@ -37,9 +37,8 @@ class OepClient:
             logger.debug("%s = %s" % (k, v))
         self.session = requests.session()
         self.session.verify = self.settings["ssl_verify"]
-        if "token" not in self.settings:
-            raise Exception("api token not given.")
-        self.session.headers = {"Authorization": "Token %(token)s" % self.settings}
+        if "token" in self.settings:
+            self.session.headers = {"Authorization": "Token %(token)s" % self.settings}
 
     def request(self, method, url, jsondata=None):
         logger.info("%s %s" % (method, url))
