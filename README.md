@@ -70,7 +70,33 @@ In a python environment, you have more flexibility to prepare / clean your data 
 
 ## Creating a table
 
-Requires a valid metadata file for column definitions.
+Requires a valid metadata file.
+
+You need to specify names and data types of your columns in the metadata, which also must be valid [post-gres data types](https://www.postgresql.org/docs/9.5/datatype.html "postgres data types").
+
+Example (excerpt):
+```
+{
+  "resources": [
+    {
+      "schema": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "bigserial"
+          },
+          {
+            "name": "field_1",
+            "type": "character vaying(32)",
+            "description": "column description",
+            "unit": "unit name"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
 
 ```bash
 oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --create 
@@ -133,7 +159,7 @@ cl = OepClient(token='API_TOKEN', ...)
 `... TODO` 
 
 
-# More Information
+# More Information - Use the API without the oep-client
 
 This document describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
 ## Create and upload data table(s)
@@ -164,24 +190,7 @@ session.headers = {'Authorization': 'Token %s' % API_TOKEN}
 * You need to specify the name of the new table (`TABLE_NAME`), which should be a valid
 post-gresql table name, without spaces, ideally only containing lower case letters, numbers and underscores.
 
-* You also need to specify names and data types of your columns, which also must be valid [post-gres data types](https://www.postgresql.org/docs/9.5/datatype.html "postgres data types").
-```
-# prepare request payload
-data = {'query': {  
-  'columns': [
-    {
-      'name': 'id',
-      'data_type': 'bigserial'
-    }, 
-    # add more columns here
-    ],
-    'constraints': [
-      {'constraint_type': 'PRIMARY KEY', 'constraint_parameter': 'id'}
-    ]
-}}
-
-# prepare api url
-url = API_URL + '/schema/model_draft/tables/' + TABLE_NAME
+* 
 
 # make request and check using PUT
 res = session.put(url, json=data)
@@ -210,18 +219,6 @@ url = API_URL + '/schema/model_draft/tables/' + TABLE_NAME + '/rows/new'
 # make request
 res = session.post(url, json=data)
 res.raise_for_status()  # check
-```
-* You can repeat this if you want to upload your data in multiple batches.
 
-## Starting over: Deleting your table
-* While the table is still in the model draft, you can always delete the table and start over: 
-```
-# prepare api url
-url = API_URL + '/schema/model_draft/tables/' + TABLE_NAME
-
-# make request
-res = session.delete(url)
-res.raise_for_status() # check
-````
 
 
