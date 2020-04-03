@@ -24,34 +24,32 @@ Install package `oep-client` from python package index with pip:
 python3 -m pip install --upgrade oep-client
 ```
 
+## Authentification
+
+You need to be [registered on the OEP platform](https://openenergy-platform.org/user/register) and have a valid API token.
+You can find your token in your user profile on the OEP under _Your Security Information_.
+
 ## Test
 
 There is a short test script that creates a table on the platform, uploads data and metadata, downloads them again 
-and finally deletes the table. You need to be [registered on the OEP platform](https://openenergy-platform.org/user/register) and have a valid API token
+and finally deletes the table.
 
 You can run it either directly from the command prompt
 
 ```
-python3 -m oep_client.test API_TOKEN
-```
-
-or in an interactive python environment
-
-```
->>> from oep_client import testscript
->>> testscript('API_TOKEN')
+oep-client --test --token API_TOKEN
 ```
 
 `TODO: example output if everything is ok`
 
 
-## Data and Metadata
+## Notes on Data and Metadata
 
 Supported filetypes for input data are: xslx, csv, json
 
 Metadata must be a json file that complies with the metadata specification of the OEP `(TODO: link)` 
 
-## Usage
+## Notes on Usage
 
 All tasks can be executed either directly as a comand line script (CLI) `oep-client` that comes with this package, or in a python environment.
 
@@ -63,22 +61,86 @@ oep-client --help
 
 In a python environment, you have more flexibility to prepare / clean your data before uploading it.
 
+## Notes on Names
 
-### Creating a table
+`TODO: schema.tablename, but upload only in model_draft ...`
+
+
+# Using the CLI
+
+## Creating a table
+
+Requires a valid metadata file for column definitions.
 
 ```bash
-oep-client 
+oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --create 
+```
+
+## Uploading data
+
+```bash
+oep-client -t API_TOKEN -n TABLE_NAME --upload-data FILENAME 
+```
+if  `FILENAME` is a 
+* `xlsx`, you *have to* also specify `--sheet SHEETNAME`  
+* `csv`, you *may* also specify  `--delimiter DELIMITER` and or  `--encoding ENCODING`  
+
+## Updating a table's metadata
+
+Requires a valid metadata file.
+
+```bash
+oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --update-metadata  
+```
+
+you can also add use `--validate` to check if the metadata file is valid according to the OEP metadata specification
+
+## Downloading data
+
+Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`  
+
+```bash
+oep-client -n TABLE_NAME FILENAME
+```
+if  `FILENAME` is a 
+* `xlsx`, you *have to* also specify `--sheet SHEETNAME`  
+* `csv`, you *may* also specify  `--delimiter DELIMITER` and or  `--encoding ENCODING`
+
+## Retrieving a table's metadata 
+
+Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`  
+
+```bash
+oep-client -n TABLE_NAME --download-metadata FILENAME 
+```
+
+## Deleting a table (that you created)
+
+```bash
+oep-client -t API_TOKEN -n TABLE_NAME --delete
 ```
 
 
 
+# Using the Package in Python
+
+All examples assume that you import the package and create a client instance first:
+```
+from oep_client import OepClient
+cl = OepClient(token='API_TOKEN', ...)
+```
+
+`... TODO` 
+
+
+# More Information
 
 This document describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
 ## Create and upload data table(s)
 * The REST-API can be used with any language than can make HTTP(s) requests.
 
 * Most requests require you to add an authorization header: 
-Authorization: `Token API_TOKEN`, where you substitute `API_TOKEN` with your token. You can find your token in your user profile on the OEP under _Your Security Information_.
+Authorization: `Token API_TOKEN`, where you substitute `API_TOKEN` with your token.
 
 * All requests (and most responses) will use json data as payload. A paylpad is the actual data content of the request.
 
