@@ -49,6 +49,7 @@ def _main(
     delimiter,
     token,
     test,
+    test_rows,
 ):
     # configure and validate settings
     if settings:
@@ -70,7 +71,7 @@ def _main(
             (delete, validate, create, upload_data, download_data, download_metadata)
         ):
             raise Exception("Cannot use action in combination with test")
-        testscript(token)
+        testscript(token, test_rows=test_rows)
     elif delete:
         if any((test, validate, create, upload_data, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
@@ -148,6 +149,7 @@ def main():
         help="ERROR, WARNING, INFO, or DEBUG",
     )
     ap.add_argument("--test", action="store_true", help="run test script")
+    ap.add_argument("--test_rows", help="number of test rows to upload", type=int)
 
     kwargs = vars(ap.parse_args())
     setup_logging(kwargs.pop("loglevel"))
