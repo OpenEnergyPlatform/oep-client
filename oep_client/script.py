@@ -150,9 +150,9 @@ def main():
         help="ERROR, WARNING, INFO, or DEBUG",
     )
     ap.add_argument("--test", action="store_true", help="run test script")
-    ap.add_argument("--test_rows", help="number of test rows to upload", type=int)
+    ap.add_argument("--test-rows", help="number of test rows to upload", type=int)
     ap.add_argument(
-        "--batch_size",
+        "--batch-size",
         help="number of records to upload in one batch. 0 = all at once, None = default value",
         type=int,
     )
