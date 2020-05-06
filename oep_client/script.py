@@ -50,6 +50,7 @@ def _main(
     token,
     test,
     test_rows,
+    batch_size,
 ):
     # configure and validate settings
     if settings:
@@ -71,7 +72,7 @@ def _main(
             (delete, validate, create, upload_data, download_data, download_metadata)
         ):
             raise Exception("Cannot use action in combination with test")
-        testscript(token, test_rows=test_rows)
+        testscript(token, test_rows=test_rows, batch_size=batch_size)
     elif delete:
         if any((test, validate, create, upload_data, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
@@ -105,7 +106,7 @@ def _main(
             df = cl.load_dataframe(
                 upload_data, sheet=sheet, delimiter=delimiter, encoding=encoding
             )
-            cl.upload_data(df, metadata=metadata)
+            cl.upload_data(df, metadata=metadata, batch_size=batch_size)
         if update_metadata:
             cl.update_metadata(metadata)
     else:
@@ -150,7 +151,11 @@ def main():
     )
     ap.add_argument("--test", action="store_true", help="run test script")
     ap.add_argument("--test_rows", help="number of test rows to upload", type=int)
-
+    ap.add_argument(
+        "--batch_size",
+        help="number of records to upload in one batch. 0 = all at once, None = default value",
+        type=int,
+    )
     kwargs = vars(ap.parse_args())
     setup_logging(kwargs.pop("loglevel"))
 

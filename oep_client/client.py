@@ -90,16 +90,19 @@ class OepClient:
         self.request("PUT", url, jsondata=jsondata)
         logger.info("   ok.")
 
-    def upload_data(self, dataframe, metadata=None):
+    def upload_data(self, dataframe, metadata=None, batch_size=None):
         """
         """
         logger.info("UPLOAD_DATA")
         url = self.get_url(is_draft=True, metadata=metadata) + "rows/new"
         data = self.convert_dataframe(dataframe)
         n_records = len(data)
-        bs = self.settings["batch_size"]
+        if batch_size is None:  # use default
+            batch_size = self.settings["batch_size"]
+        elif batch_size == 0:
+            batch_size = n_records
         while data:
-            batch, data = data[:bs], data[bs:]
+            batch, data = data[:batch_size], data[batch_size:]
             jsondata = {"query": batch}
             logger.info("   sending batch (n=%d) ..." % len(batch))
             self.request("POST", url, jsondata=jsondata)
