@@ -1,6 +1,6 @@
 # OEP Client
 
-This tool tries to make data sharing with the OEP as easy as possible. Common tasks are:
+This tool eases data sharing with the Open Energy Platform (OEP). Common tasks on the OEP are:
 
 * creating a table
 * uploading data
@@ -34,7 +34,7 @@ You can find your token in your user profile on the OEP under _Your Security Inf
 There is a short test script that creates a table on the platform, uploads data and metadata, downloads them again 
 and finally deletes the table.
 
-You can run it either directly from the command prompt
+You can run it either directly from the command prompt using
 
 ```
 oep-client --test --token API_TOKEN
@@ -45,9 +45,8 @@ oep-client --test --token API_TOKEN
 
 ## Notes on Data and Metadata
 
-Supported filetypes for input data are: xslx, csv, json
-
-Metadata must be a json file that complies with the metadata specification of the OEP `(TODO: link)` 
+Supported filetypes that the client can work with are are: xslx, csv, json
+Your metadata must be a json file that complies with the [metadata specification of the OEP](https://github.com/OpenEnergyPlatform/metadata)
 
 ## Notes on Usage
 
@@ -113,7 +112,7 @@ if  `FILENAME` is a
 
 ## Updating a table's metadata
 
-Requires a valid metadata file.
+This of course requires a valid metadata file.
 
 ```bash
 oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --update-metadata  
@@ -123,7 +122,7 @@ you can also add use `--validate` to check if the metadata file is valid accordi
 
 ## Downloading data
 
-Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`  
+Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).  
 
 ```bash
 oep-client -n TABLE_NAME FILENAME
@@ -134,7 +133,7 @@ if  `FILENAME` is a
 
 ## Retrieving a table's metadata 
 
-Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`  
+Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).
 
 ```bash
 oep-client -n TABLE_NAME --download-metadata FILENAME 
@@ -145,8 +144,6 @@ oep-client -n TABLE_NAME --download-metadata FILENAME
 ```bash
 oep-client -t API_TOKEN -n TABLE_NAME --delete
 ```
-
-
 
 # Using the Package in Python
 
@@ -161,7 +158,8 @@ cl = OepClient(token='API_TOKEN', ...)
 
 # More Information - Use the API without the oep-client
 
-This document describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
+This section describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
+
 ## Create and upload data table(s)
 * The REST-API can be used with any language than can make HTTP(s) requests.
 
@@ -189,8 +187,6 @@ session.headers = {'Authorization': 'Token %s' % API_TOKEN}
 
 * You need to specify the name of the new table (`TABLE_NAME`), which should be a valid
 post-gresql table name, without spaces, ideally only containing lower case letters, numbers and underscores.
-
-* 
 
 # make request and check using PUT
 res = session.put(url, json=data)
