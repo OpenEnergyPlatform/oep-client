@@ -41,6 +41,7 @@ def _main(
     delete,
     upload_data,
     download_data,
+    upload_csv,
     update_metadata,
     download_metadata,
     tablename,
@@ -69,16 +70,16 @@ def _main(
     cl = OepClient(**settings)
     if test:
         if any(
-            (delete, validate, create, upload_data, download_data, download_metadata)
+            (delete, validate, create, upload_data, upload_csv, download_data, download_metadata)
         ):
             raise Exception("Cannot use action in combination with test")
         testscript(token, test_rows=test_rows, batch_size=batch_size)
     elif delete:
-        if any((test, validate, create, upload_data, download_data, download_metadata)):
+        if any((test, validate, create, upload_data, upload_csv, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
         cl.delete(metadata=metadata)
     elif download_data or download_metadata:  # download workflow
-        if any((test, delete, validate, create, upload_data, update_metadata)):
+        if any((test, delete, validate, create, upload_data, upload_csv, update_metadata)):
             raise Exception(
                 "Cannot use action in combination with download_data/download_metadata"
             )
@@ -90,7 +91,7 @@ def _main(
         if download_metadata:
             meta = cl.download_metadata(metadata=metadata)
             cl.save_json(meta, download_metadata)
-    elif create or upload_data or update_metadata or validate:  # upload workflow
+    elif create or upload_data or upload_csv or update_metadata or validate:  # upload workflow
         if any((test, delete, download_data, download_metadata)):
             raise Exception(
                 "Cannot use action in combination with create/upload_data/update_metadata"
@@ -107,6 +108,8 @@ def _main(
                 upload_data, sheet=sheet, delimiter=delimiter, encoding=encoding
             )
             cl.upload_data(df, metadata=metadata, batch_size=batch_size)
+        if upload_csv:
+            cl.upload_csv(upload_csv, metadata=metadata, encoding=encoding)
         if update_metadata:
             cl.update_metadata(metadata)
     else:
@@ -128,6 +131,9 @@ def main():
     ap.add_argument("--delete", action="store_true", help="remove table")
     ap.add_argument(
         "--upload-data", "-u", help="input file with data, can be xlsx, csv, json"
+    )
+    ap.add_argument(
+        "--upload-csv", help="EXPERIMENTAL: input file as csv, will be send unparsed to server"
     )
     ap.add_argument(
         "--download-data", "-d", help="file to save data to, can be xlsx, csv, json"
