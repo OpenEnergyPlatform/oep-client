@@ -107,15 +107,6 @@ class OepClient:
             logger.info("   sending batch (n=%d) ..." % len(batch))
             self.request("POST", url, jsondata=jsondata)
         logger.info("   ok. (n=%d)" % n_records)
-    
-    def upload_csv(self, upload_csv, metadata=None, encoding=None):
-        logger.info("UPLOAD_CSV")
-        with open(upload_csv, encoding=encoding) as f:
-            data = f.read()
-        url = self.get_url(is_draft=True, metadata=metadata) + "rows/new?form=csv"
-        jsondata = {"query": data}
-        self.request("POST", url, jsondata=jsondata)
-        logger.info("   ok.")
 
     def download_data(self, metadata=None):
         """
