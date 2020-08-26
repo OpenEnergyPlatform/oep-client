@@ -78,15 +78,14 @@ class OepClient:
         logger.info("CREATE")
         url = self.get_url(is_draft=True, metadata=metadata)
         columns = self.get_column_defs_from_meta(metadata)
+        constraints = self.get_constraints_from_meta(metadata)
         jsondata = {
             "query": {
                 "columns": columns,
-                # TODO: additional constraints from metadata
-                "constraints": [
-                    {"constraint_type": "PRIMARY KEY", "constraint_parameter": "id"}
-                ],
+                "constraints": constraints
             }
         }
+        logger.debug(jsondata)
         self.request("PUT", url, jsondata=jsondata)
         logger.info("   ok.")
 
@@ -208,11 +207,38 @@ class OepClient:
             return json.dump(data, f, sort_keys=True, indent=2)
 
     @staticmethod
-    def get_column_defs_from_meta(metadata):
+    def get_constraints_from_meta(metadata):
+        constraints = []
+        schema = metadata["resources"][0]["schema"]
+        pk_fields = schema.get("primaryKey")
+        if pk_fields:
+            if not isinstance(pk_fields, str):
+                raise Exception("platform currently only supports single field primary key")
+            constraints.append(
+                {"constraint_type": "PRIMARY KEY", "constraint_parameter": pk_fields}
+            )
+
+        # TODO: foreignKeys
+        return constraints
+
+    @classmethod
+    def get_is_nullable(cls, val):
+        if val in (None, "YES", "yes", "true", True, 1):
+            return "YES"
+        elif val in ("NO", "no", "false", False, 0):
+            return "NO"
+        else:
+            raise Exception("Invalid value for is_nullable: %s" % val)
+    
+    @classmethod
+    def get_datatype(cls, val):
+        return val
+
+    @classmethod
+    def get_column_defs_from_meta(cls, metadata):
         """Return column definitions as list of {
             name: STR,
-            type: STR,
-            [character_maximum_length: INT],
+            type: STR,            
             [is_nullable:YES|NO],
             [unit],
             [description]
@@ -221,24 +247,12 @@ class OepClient:
         for c in metadata["resources"][0]["schema"]["fields"]:
             f = {
                 "name": fix_name(c["name"]),
-                "data_type": fix_name(c["type"]),
-                "is_nullable": c.get("is_nullable", "YES"),
+                "data_type": cls.get_datatype(c["type"]),
+                "is_nullable": cls.get_is_nullable(c.get("is_nullable")),
                 "description": c.get("description", ""),
                 "unit": c.get("unit", ""),
             }
-            if "character_maximum_length" in c:
-                f["character_maximum_length"] = int(c["character_maximum_length"])
-            # fix type names
-            if f["data_type"] == "double precision":
-                f["data_type"] = "float"
-            elif f["data_type"] == "serial":
-                f["data_type"] = "integer"
-            elif f["data_type"] == "string":
-                f["data_type"] = "varchar"
-            res.append(f)
-        # add id, if not exist
-        if not any(c["name"].lower() == "id" for c in res):
-            res = [{"name": "id", "data_type": "bigserial", "is_nullable": "NO"}] + res
+            res.append(f)        
         return res
 
     def get_tablename_from_meta(self, metadata):
