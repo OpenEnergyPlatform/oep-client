@@ -45,8 +45,8 @@ oep-client --test --token API_TOKEN
 
 ## Notes on Data and Metadata
 
-Supported filetypes that the client can work with are are: xslx, csv, json
-Your metadata must be a json file that complies with the [metadata specification of the OEP](https://github.com/OpenEnergyPlatform/metadata)
+Supported filetypes that the client can work with are are: xslx, csv, json.
+Your metadata must be a json file that complies with the [metadata specification of the OEP](https://github.com/OpenEnergyPlatform/metadata).
 
 ## Notes on Usage
 
