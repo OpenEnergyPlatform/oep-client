@@ -224,9 +224,9 @@ class OepClient:
     @classmethod
     def get_is_nullable(cls, val):
         if val in (None, "YES", "yes", "true", True, 1):
-            return "YES"
+            return True
         elif val in ("NO", "no", "false", False, 0):
-            return "NO"
+            return False
         else:
             raise Exception("Invalid value for is_nullable: %s" % val)
     
