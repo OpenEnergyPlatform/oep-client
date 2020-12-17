@@ -17,7 +17,7 @@ example_metadata = {
                 "fields": [
                     {
                         "name": "field1",
-                        "type": "string",
+                        "type": "varchar(128)",
                         "description": "column description",
                     },
                     {"name": "field2", "type": "integer", "unit": "none"},
