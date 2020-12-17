@@ -36,7 +36,7 @@ def test(client, test_rows=None, batch_size=None):
     example_data = pd.DataFrame([exacmple_record] * test_rows)
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     tablename = "test_%s_%d" % (timestamp, random.randint(100000, 999999))
-    self.settings["tablename"] = tablename
+    client.settings["tablename"] = tablename
     client.create(metadata=example_metadata)
     try:
         client.upload_data(dataframe=example_data, batch_size=batch_size)
