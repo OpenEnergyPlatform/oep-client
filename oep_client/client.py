@@ -79,12 +79,7 @@ class OepClient:
         url = self.get_url(is_draft=True, metadata=metadata)
         columns = self.get_column_defs_from_meta(metadata)
         constraints = self.get_constraints_from_meta(metadata)
-        jsondata = {
-            "query": {
-                "columns": columns,
-                "constraints": constraints
-            }
-        }
+        jsondata = {"query": {"columns": columns, "constraints": constraints}}
         logger.debug(jsondata)
         self.request("PUT", url, jsondata=jsondata)
         logger.info("   ok.")
@@ -213,7 +208,9 @@ class OepClient:
         pk_fields = schema.get("primaryKey")
         if pk_fields:
             if not isinstance(pk_fields, str):
-                raise Exception("platform currently only supports single field primary key")
+                raise Exception(
+                    "platform currently only supports single field primary key"
+                )
             constraints.append(
                 {"constraint_type": "PRIMARY KEY", "constraint_parameter": pk_fields}
             )
@@ -229,7 +226,7 @@ class OepClient:
             return False
         else:
             raise Exception("Invalid value for is_nullable: %s" % val)
-    
+
     @classmethod
     def get_datatype(cls, val):
         return val
@@ -252,7 +249,7 @@ class OepClient:
                 "description": c.get("description", ""),
                 "unit": c.get("unit", ""),
             }
-            res.append(f)        
+            res.append(f)
         return res
 
     def get_tablename_from_meta(self, metadata):

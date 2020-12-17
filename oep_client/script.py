@@ -72,7 +72,7 @@ def _main(
             (delete, validate, create, upload_data, download_data, download_metadata)
         ):
             raise Exception("Cannot use action in combination with test")
-        testscript(token, test_rows=test_rows, batch_size=batch_size)
+        testscript(cl, test_rows=test_rows, batch_size=batch_size)
     elif delete:
         if any((test, validate, create, upload_data, download_data, download_metadata)):
             raise Exception("Cannot use action in combination with delete")
