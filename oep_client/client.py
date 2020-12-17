@@ -18,6 +18,17 @@ def fix_name(name):
     return name_new
 
 
+def get_fields_values(records):
+    fields = set()
+    values = []
+    for rec in records:
+        fields = fields | set(rec.keys())
+    fields = list(fields)
+    for rec in records:
+        values.append([rec.get(f) for f in fields])
+    return fields, values
+
+
 class OepClient:
     def __init__(self, **settings):
         self.settings = {
@@ -84,22 +95,101 @@ class OepClient:
         self.request("PUT", url, jsondata=jsondata)
         logger.info("   ok.")
 
+    def upload_data_single(self, data, metadata=None, batch_size=None):
+        """records one by one: very slow
+        """
+        url = (
+            self.get_url(is_draft=True, metadata=metadata) + "rows/"
+        )  # or /new works too
+        for rec in data:
+            jsondata = {"query": rec}
+            self.request("POST", url, jsondata=jsondata)
+
+    def upload_data_batch_with_id(self, data, metadata=None, batch_size=None):
+        """records as batch, but only works if we have id column
+        """
+        url = self.get_url(is_draft=True, metadata=metadata) + "rows/new"
+        while data:
+            batch, data = data[:batch_size], data[batch_size:]
+            jsondata = {"query": batch}
+            logger.info("   sending batch (n=%d) ..." % len(batch))
+            self.request("POST", url, jsondata=jsondata)
+
+    def upload_data_advanced(self, data, metadata=None, batch_size=None):
+        """use advanced api
+        """
+        jsondata = None
+        url = self.get_api_url() + "advanced/connection/open"
+        connection_id = self.request("POST", url, jsondata=jsondata).json()["content"][
+            "connection_id"
+        ]
+
+        try:
+            jsondata = {"connection_id": connection_id}
+            url = self.get_api_url() + "advanced/cursor/open"
+            cursor_id = self.request("POST", url, jsondata=jsondata).json()["content"][
+                "cursor_id"
+            ]
+
+            schema, table = self.get_schema_table(is_draft=True, metadata=metadata)
+            url = self.get_api_url() + "advanced/insert"
+            while data:
+                batch, data = data[:batch_size], data[batch_size:]
+                fields, values = get_fields_values(batch)
+                query = {
+                    "schema": schema,
+                    "table": table,
+                    "fields": fields,
+                    "values": values,
+                }
+                jsondata = {
+                    "connection_id": connection_id,
+                    "cursor_id": cursor_id,
+                    "query": query,
+                }
+                logger.info("   sending batch (n=%d) ..." % len(batch))
+                self.request("POST", url, jsondata=jsondata)
+
+            jsondata = {"connection_id": connection_id, "cursor_id": cursor_id}
+            url = self.get_api_url() + "advanced/connection/commit"
+            self.request("POST", url, jsondata=jsondata)
+
+            jsondata = {"connection_id": connection_id, "cursor_id": cursor_id}
+            url = self.get_api_url() + "advanced/connection/close"
+            self.request("POST", url, jsondata=jsondata)
+
+        except Exception as e:
+            try:
+                jsondata = {"connection_id": connection_id}
+                url = self.get_api_url() + "advanced/connection/rollback"
+                self.request("POST", url, jsondata=jsondata)
+            except:
+                pass
+
+            try:
+                jsondata = {"connection_id": connection_id, "cursor_id": cursor_id}
+                url = self.get_api_url() + "advanced/connection/close"
+                self.request("POST", url, jsondata=jsondata)
+            except:
+                pass
+
+            raise e
+
     def upload_data(self, dataframe, metadata=None, batch_size=None):
         """
         """
         logger.info("UPLOAD_DATA")
-        url = self.get_url(is_draft=True, metadata=metadata) + "rows/new"
         data = self.convert_dataframe(dataframe)
         n_records = len(data)
         if batch_size is None:  # use default
             batch_size = self.settings["batch_size"]
         elif batch_size == 0:
             batch_size = n_records
-        while data:
-            batch, data = data[:batch_size], data[batch_size:]
-            jsondata = {"query": batch}
-            logger.info("   sending batch (n=%d) ..." % len(batch))
-            self.request("POST", url, jsondata=jsondata)
+
+        # self.upload_data_single(data=data, metadata=metadata, batch_size=batch_size)
+        # self.upload_data_batch(data=data, metadata=metadata, batch_size=batch_size)
+        self.upload_data_advanced(data=data, metadata=metadata, batch_size=batch_size)
+
         logger.info("   ok. (n=%d)" % n_records)
 
     def download_data(self, metadata=None):
@@ -235,7 +325,7 @@ class OepClient:
     def get_column_defs_from_meta(cls, metadata):
         """Return column definitions as list of {
             name: STR,
-            type: STR,            
+            type: STR,
             [is_nullable:YES|NO],
             [unit],
             [description]
@@ -259,7 +349,11 @@ class OepClient:
             raise Exception("table name not found in metadata (name in resource[0])")
         return name
 
-    def get_url(self, is_draft=False, metadata=None):
+    def get_api_url(self):
+        url = "%(protocol)s://%(host)s/api/%(api_version)s/" % self.settings
+        return url
+
+    def get_schema_table(self, is_draft=False, metadata=None):
         tablename = self.settings.get("tablename") or self.get_tablename_from_meta(
             metadata
         )
@@ -269,6 +363,9 @@ class OepClient:
             schema = self.settings["schema"]
         if is_draft:
             schema = self.settings["schema_draft"]
-        url = "%(protocol)s://%(host)s/api/%(api_version)s/schema/" % self.settings
-        url += "%s/tables/%s/" % (schema, tablename)
+        return schema, tablename
+
+    def get_url(self, is_draft=False, metadata=None):
+        schema, tablename = self.get_schema_table(is_draft=is_draft, metadata=metadata)
+        url = self.get_api_url() + "schema/%s/tables/%s/" % (schema, tablename)
         return url

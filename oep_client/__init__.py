@@ -1,5 +1,5 @@
 # coding: utf-8
-__version__ = "0.5.5"
+__version__ = "0.6.0"
 
 from .client import OepClient
 from .script import setup_logging, logger

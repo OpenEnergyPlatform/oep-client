@@ -5,6 +5,7 @@ import pandas as pd
 import random
 from argparse import ArgumentParser
 
+id_col = "_id"  # NOTE: API has some issues, some methods require column named "id"
 
 example_metadata = {
     "id": "test",
@@ -15,25 +16,30 @@ example_metadata = {
             "name": "test",
             "schema": {
                 "fields": [
+                    {"name": id_col, "type": "bigint"},
                     {
                         "name": "field1",
                         "type": "varchar(128)",
                         "description": "column description",
                     },
                     {"name": "field2", "type": "integer", "unit": "none"},
-                ],
-                "foreignKeys": [],
+                ]
             },
         }
     ],
 }
 
-exacmple_record = {"field1": "test", "field2": 999}
+example_record = {"field1": "test", "field2": 999}
 
 
 def test(client, test_rows=None, batch_size=None):
     test_rows = test_rows or 1
-    example_data = pd.DataFrame([exacmple_record] * test_rows)
+    example_data = []
+    for i in range(test_rows):
+        rec = example_record.copy()
+        rec[id_col] = i
+        example_data.append(rec)
+    example_data = pd.DataFrame(example_data)
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     tablename = "test_%s_%d" % (timestamp, random.randint(100000, 999999))
     client.settings["tablename"] = tablename
@@ -44,7 +50,7 @@ def test(client, test_rows=None, batch_size=None):
         data = client.download_data()
         metadata = client.download_metadata()
         print(len(data))
-        print(data[0])
+        print(data)
         print(metadata)
     finally:
         client.delete()
