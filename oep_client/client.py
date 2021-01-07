@@ -213,7 +213,7 @@ class OepClient:
         """
         """
         logger.info("UPDATE_METADATA")
-        url = self.get_url(is_draft=True, metadata=metadata) + "meta/"
+        url = self.get_url(is_draft=False, metadata=metadata) + "meta/"
         self.request("POST", url, jsondata=metadata)
         logger.info("   ok.")
 
