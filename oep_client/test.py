@@ -1,56 +1,74 @@
 # coding: utf-8
-import datetime
-from .client import OepClient
-import pandas as pd
+import unittest
 import random
-from argparse import ArgumentParser
+import logging
+import os
 
-id_col = "_id"  # NOTE: API has some issues, some methods require column named "id"
+from . import OepClient
 
-example_metadata = {
-    "id": "test",
-    "description": "Test Table",
-    "keywords": ["test"],
-    "resources": [
+TOKEN_ENV_VAR = "OEP_API_TOKEN"
+SCHEMA = "sandbox"
+MAX_TRIES = 10
+
+TEST_TABLE_DEFINITION = {
+    "columns": [
         {
-            "name": "test",
-            "schema": {
-                "fields": [
-                    {"name": id_col, "type": "bigint"},
-                    {
-                        "name": "field1",
-                        "type": "varchar(128)",
-                        "description": "column description",
-                    },
-                    {"name": "field2", "type": "integer", "unit": "none"},
-                ]
-            },
-        }
-    ],
+            "name": "id",
+            "data_type": "bigint",
+            "is_nullable": False,
+            "primary_key": True,
+        },
+        {"name": "field1", "data_type": "varchar(128)", "is_nullable": False},
+        {"name": "field2", "data_type": "integer", "is_nullable": True},
+    ]
 }
+TEST_TABLE_DATA = [
+    {"id": 1, "field1": "test", "field2": 100},
+    {"id": 2, "field1": "test2", "field2": None},
+]
 
-example_record = {"field1": "test", "field2": 999}
 
+def roundtrip(client):
+    """
+        * create table
+        * upload data
+        * download data
+        * delete table
+    """
+    # create a random test table name that does not exist
+    tries_left = MAX_TRIES
+    while tries_left:
+        table_name = "test_table_%s" % random.randint(0, 1000000000)
+        if not client.table_exists(table_name):
+            break
+        if not tries_left:
+            raise Exception(
+                "Could not create a random test table name after %d tries"
+                % MAX_TRIES
+            )
 
-def test(client, test_rows=None, batch_size=None):
-    test_rows = test_rows or 1
-    example_data = []
-    for i in range(test_rows):
-        rec = example_record.copy()
-        rec[id_col] = i
-        example_data.append(rec)
-    example_data = pd.DataFrame(example_data)
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    tablename = "test_%s_%d" % (timestamp, random.randint(100000, 999999))
-    client.settings["tablename"] = tablename
-    client.create(metadata=example_metadata)
-    try:
-        client.upload_data(dataframe=example_data, batch_size=batch_size)
-        client.update_metadata(metadata=example_metadata)
-        data = client.download_data()
-        metadata = client.download_metadata()
-        print(len(data))
-        print(data)
-        print(metadata)
-    finally:
-        client.delete()
+    client.create_table(table_name, TEST_TABLE_DEFINITION)
+    client.insert_into_table(table_name, TEST_TABLE_DATA)
+    data = client.select_from_table(table_name)
+    client.drop_table(table_name)
+    return data
+
+class TestTemplate(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        token = os.environ.get(TOKEN_ENV_VAR)
+        if not token:
+            raise Exception(
+                "In order to run the test, you must set the environment variable %s"
+                % TOKEN_ENV_VAR
+            )
+
+        logging.basicConfig(
+            format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.DEBUG
+        )
+
+        cls.client = OepClient(token=token, default_schema=SCHEMA,)
+
+    def test_roundtrip(self):
+        data = roundtrip(self.client)
+        self.assertEqual(data, TEST_TABLE_DATA)

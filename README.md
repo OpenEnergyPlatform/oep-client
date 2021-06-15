@@ -6,15 +6,15 @@ This tool eases data sharing with the Open Energy Platform (OEP). Common tasks o
 * uploading data
 * updating a table's metadata
 * downloading data
-* retrieving a table's metadata 
+* retrieving a table's metadata
 * deleting a table (that you created)
 
-You can also always just use the API `(TODO: link to documentation)` directly if your tasks are more complex.  
+You can also always just use the API `(TODO: link to documentation)` directly if your tasks are more complex.
 
 ## Notes for Windows Users
 
 All the example commands below use `python3`, because we need python 3. Under Windows, it's most likely to be `python.exe` or just `python`.
- 
+
 
 ## Installation
 
@@ -31,17 +31,14 @@ You can find your token in your user profile on the OEP under _Your Security Inf
 
 ## Test
 
-There is a short test script that creates a table on the platform, uploads data and metadata, downloads them again 
+There is a short test script that creates a table on the platform, uploads data and metadata, downloads them again
 and finally deletes the table.
 
 You can run it either directly from the command prompt using
 
 ```
-oep-client --test --token API_TOKEN
+oep-client -t OEP_API_TOKEN test
 ```
-
-`TODO: example output if everything is ok`
-
 
 ## Notes on Data and Metadata
 
@@ -60,20 +57,15 @@ oep-client --help
 
 In a python environment, you have more flexibility to prepare / clean your data before uploading it.
 
-## Notes on Names
-
-`TODO: schema.tablename, but upload only in model_draft ...`
-
-
 # Using the CLI
 
 ## Creating a table
 
 Requires a valid metadata file.
 
-You need to specify names and data types of your columns in the metadata, which also must be valid [post-gres data types](https://www.postgresql.org/docs/9.5/datatype.html "postgres data types").
+You need to specify names and data types of your columns in the metadata, which also must be valid [postgres data types](https://www.postgresql.org/docs/9.5/datatype.html "postgres data types").
 
-Example (excerpt):
+`metadata.json`
 ```
 {
   "resources": [
@@ -86,7 +78,7 @@ Example (excerpt):
           },
           {
             "name": "field_1",
-            "type": "character vaying(32)",
+            "type": "varchar(32)",
             "description": "column description",
             "unit": "unit name"
           }
@@ -98,51 +90,49 @@ Example (excerpt):
 ```
 
 ```bash
-oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --create 
+oep-client -t OEP_API_TOKEN create TABLE_NAME metadata.json
 ```
 
 ## Uploading data
 
 ```bash
-oep-client -t API_TOKEN -n TABLE_NAME --upload-data FILENAME 
+oep-client -t OEP_API_TOKEN insert TABLE_NAME FILENAME
 ```
-if  `FILENAME` is a 
-* `xlsx`, you *have to* also specify `--sheet SHEETNAME`  
-* `csv`, you *may* also specify  `--delimiter DELIMITER` and or  `--encoding ENCODING`  
+if  `FILENAME` is a
+* `xlsx`, you *have to* also specify `--sheet SHEETNAME`
+* `csv`, you *may* also specify  `--delimiter DELIMITER` and or  `--encoding ENCODING`
 
 ## Updating a table's metadata
 
 This of course requires a valid metadata file.
 
 ```bash
-oep-client -t API_TOKEN -n TABLE_NAME -m METADATA --update-metadata  
+oep-client -t OEP_API_TOKEN metadata set TABLE_NAME metadata.json
 ```
-
-you can also add use `--validate` to check if the metadata file is valid according to the OEP metadata specification
 
 ## Downloading data
 
-Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).  
+Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).
 
 ```bash
-oep-client -n TABLE_NAME FILENAME
+oep-client -t OEP_API_TOKEN select TABLE_NAME FILENAME
 ```
-if  `FILENAME` is a 
-* `xlsx`, you *have to* also specify `--sheet SHEETNAME`  
+if  `FILENAME` is a
+* `xlsx`, you *have to* also specify `--sheet SHEETNAME`
 * `csv`, you *may* also specify  `--delimiter DELIMITER` and or  `--encoding ENCODING`
 
-## Retrieving a table's metadata 
+## Retrieving a table's metadata
 
 Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as  `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).
 
 ```bash
-oep-client -n TABLE_NAME --download-metadata FILENAME 
+oep-client -t OEP_API_TOKEN metadata get TABLE_NAME FILENAME
 ```
 
 ## Deleting a table (that you created)
 
 ```bash
-oep-client -t API_TOKEN -n TABLE_NAME --delete
+oep-client -t OEP_API_TOKEN drop TABLE_NAME
 ```
 
 # Using the Package in Python
@@ -153,7 +143,7 @@ from oep_client import OepClient
 cl = OepClient(token='API_TOKEN', ...)
 ```
 
-`... TODO` 
+`... TODO`
 
 
 # More Information - Use the API without the oep-client
@@ -163,7 +153,7 @@ This section describes how to upload data to the [OEP](https://openenergy-platfo
 ## Create and upload data table(s)
 * The REST-API can be used with any language than can make HTTP(s) requests.
 
-* Most requests require you to add an authorization header: 
+* Most requests require you to add an authorization header:
 Authorization: `Token API_TOKEN`, where you substitute `API_TOKEN` with your token.
 
 * All requests (and most responses) will use json data as payload. A paylpad is the actual data content of the request.
@@ -175,8 +165,8 @@ import requests
 API_URL = 'https://openenergy-platform.org/api/v0'
 session = requests.Session()
 session.headers = {'Authorization': 'Token %s' % API_TOKEN}
-``` 
-* The requests in the following sections use roughly the same pattern: 
+```
+* The requests in the following sections use roughly the same pattern:
     * Prepare your request payload as a json object
     * Prepare your request url
     * Send your request using the correct verb (get, post, put, delete)

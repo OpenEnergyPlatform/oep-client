@@ -1,6 +1,20 @@
 # coding: utf-8
-__version__ = "0.6.1"
+__version__ = "0.7.0"
 
-from .client import OepClient
-from .script import setup_logging, logger
-from .test import test as testscript
+from .oep_client import OepClient
+from .oep_client import (
+    DEFAULT_PROTOCOL,
+    DEFAULT_HOST,
+    DEFAULT_API_VERSION,
+    DEFAULT_SCHEMA,
+    DEFAULT_INSERT_RETRIES,
+    DEFAULT_BATCH_SIZE,
+)
+from .oep_client import (
+    OepApiException,
+    OepServerSideException,
+    OepClientSideException,
+    OepAuthenticationException,
+    OepTableNotFoundException,
+    OepTableAlreadyExistsException,
+)
