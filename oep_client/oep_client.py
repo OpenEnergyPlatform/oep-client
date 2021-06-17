@@ -185,14 +185,17 @@ class OepClient:
         try:
             res_json = res.json()
         except json.decoder.JSONDecodeError:
-            if res.status_code < 500:
-                raise OepClientSideException(res.reason)
-            else:
-                raise OepServerSideException()
+            # api should return json, but some actions don't,
+            # and 500 errors obviously also don't
+            res_json = {}
+        if res.status_code >= 500:
+            raise OepServerSideException(res_json)
+        elif res.status_code >= 400:
+            raise OepClientSideException(res_json)
         if res.status_code != expected_status:
             if "reason" in res_json:
                 res_json = res_json["reason"]
-            raise OepApiException(res_json)
+            raise OepClientSideException(res_json)
         return res_json
 
     @check_exception("exists", OepTableAlreadyExistsException)
@@ -447,7 +450,7 @@ class OepClient:
             rowcount = rec["rowcount"]
         return rowcount
 
-    def move(self, table, target_schema, schema=None):
+    def table_move(self, table, target_schema, schema=None):
         """Move table into new target schema
         """
         url = self._get_table_url(table=table, schema=schema) + 'move/%s/' % target_schema

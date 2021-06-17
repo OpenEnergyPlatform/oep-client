@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 
 import sys
 import logging
@@ -245,9 +245,9 @@ def test_roundtrip(ctx):
 @click.pass_context
 @click.argument("table")
 @click.argument("target_schema")
-def move(ctx, table, target_schema):
+def table_move(ctx, table, target_schema):
     client = ctx.obj["client"]
-    client.move(table, target_schema)
+    client.table_move(table, target_schema)
     logging.info("OK")
 
 
