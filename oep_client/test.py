@@ -28,7 +28,7 @@ TEST_TABLE_DATA = [
 ]
 
 
-def roundtrip(client):
+def roundtrip(client, schema=SCHEMA):
     """
         * create table
         * upload data
@@ -39,7 +39,7 @@ def roundtrip(client):
     tries_left = MAX_TRIES
     while tries_left:
         table_name = "test_table_%s" % random.randint(0, 1000000000)
-        if not client.table_exists(table_name):
+        if not client.table_exists(table_name, schema=schema):
             break
         if not tries_left:
             raise Exception(
@@ -47,10 +47,10 @@ def roundtrip(client):
                 % MAX_TRIES
             )
 
-    client.create_table(table_name, TEST_TABLE_DEFINITION)
-    client.insert_into_table(table_name, TEST_TABLE_DATA)
-    data = client.select_from_table(table_name)
-    client.drop_table(table_name)
+    client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
+    client.insert_into_table(table_name, TEST_TABLE_DATA, schema=schema)
+    data = client.select_from_table(table_name, schema=schema)
+    client.drop_table(table_name, schema=schema)
     return data
 
 class TestTemplate(unittest.TestCase):
@@ -67,7 +67,7 @@ class TestTemplate(unittest.TestCase):
             format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.DEBUG
         )
 
-        cls.client = OepClient(token=token, default_schema=SCHEMA,)
+        cls.client = OepClient(token=token)
 
     def test_roundtrip(self):
         data = roundtrip(self.client)

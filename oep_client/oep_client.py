@@ -35,8 +35,7 @@ import click
 import requests
 
 
-DEFAULT_PROTOCOL = "https"
-DEFAULT_HOST = "openenergy-platform.org"
+DEFAULT_HOST = "https://openenergy-platform.org"
 DEFAULT_API_VERSION = "v0"
 DEFAULT_SCHEMA = "model_draft"
 DEFAULT_BATCH_SIZE = None
@@ -60,7 +59,7 @@ class OepAuthenticationException(OepClientSideException):
 
 
 class OepTableNotFoundException(OepClientSideException):
-    def __init__(self, msg):
+    def __init__(self, _msg):
         # the API falsely returns message: {'detail': 'You do not have permission to perform this action}
         # but this is only because table  does not exist
         super().__init__("Table does not exist")
@@ -130,7 +129,6 @@ class OepClient:
     def __init__(
         self,
         token=None,
-        protocol=DEFAULT_PROTOCOL,
         host=DEFAULT_HOST,
         api_version=DEFAULT_API_VERSION,
         default_schema=DEFAULT_SCHEMA,
@@ -140,8 +138,7 @@ class OepClient:
         """
         Args:
             token(str): your API token
-            protocol(str, optional): should be https, unless you are in a local test environment
-            host(str, optional): host of the oep platform. default is "openenergy-platform.org"
+            host(str, optional): host of the oep platform. default is "https://openenergy-platform.org"
             api_version(str, optional): currently only "v0"
             default_schema(str, optional): the default schema for the tables, usually "model_draft"
             batch_size(int, optional): number of records that will be uploaded per batch.
@@ -149,7 +146,7 @@ class OepClient:
             insert_retries(int, optional): number of insert_retries for insert on OepServerSideExceptions
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
-        self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
+        self.api_url = "%s/api/%s/" % (host, api_version)
         self.default_schema = default_schema
         self.batch_size = batch_size
         self.insert_retries = insert_retries
@@ -450,6 +447,11 @@ class OepClient:
             rowcount = rec["rowcount"]
         return rowcount
 
+    def move(self, table, target_schema, schema=None):
+        """Move table into new target schema
+        """
+        url = self._get_table_url(table=table, schema=schema) + 'move/%s/' % target_schema
+        return self._request("POST", url, 200)
 
 class AdvancedApiSession:
     """Context for advanced api session (close connection on exit)

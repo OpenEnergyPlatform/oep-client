@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.7.0"
+__version__ = "0.8.2"
 
 import sys
 import logging
@@ -16,7 +16,6 @@ sys.path.insert(0, os.path.join(os.path.basename(__file__), '..'))
 
 from oep_client.oep_client import (
     OepClient,
-    DEFAULT_PROTOCOL,
     DEFAULT_HOST,
     DEFAULT_API_VERSION,
     DEFAULT_SCHEMA,
@@ -124,7 +123,6 @@ def write_dataframe(df, filepath, **kwargs):
     type=click.Choice(["debug", "info", "warning", "error"]),
 )
 @click.option("--token", "-t")
-@click.option("--protocol", default=DEFAULT_PROTOCOL)
 @click.option("--host", default=DEFAULT_HOST)
 @click.option("--api-version", default=DEFAULT_API_VERSION)
 @click.option("--schema", "-s", default=DEFAULT_SCHEMA)
@@ -134,7 +132,6 @@ def main(
     ctx,
     loglevel,
     token,
-    protocol,
     host,
     api_version,
     schema,
@@ -146,7 +143,6 @@ def main(
     ctx.ensure_object(dict)
     ctx.obj["client"] = OepClient(
         token=token,
-        protocol=protocol,
         host=host,
         api_version=api_version,
         default_schema=schema,
@@ -165,7 +161,10 @@ def create_table(ctx, table, metadata_file, encoding):
     definition = get_schema_definition_from_metadata(metadata)
     client = ctx.obj["client"]
     client.create_table(table, definition)
-    logging.info("OK")
+    # automatically upload metadata?
+    #client.set_metadata(table, metadata)
+
+    #logging.info("OK")
 
 
 @main.command("drop")
@@ -233,12 +232,24 @@ def set_metadata(ctx, table, metadata_file, encoding):
     client.set_metadata(table, metadata)
     logging.info("OK")
 
+
 @main.command("test")
 @click.pass_context
 def test_roundtrip(ctx):
     client = ctx.obj["client"]
     roundtrip(client)
     logging.info("OK")
+
+
+@main.command("move")
+@click.pass_context
+@click.argument("table")
+@click.argument("target_schema")
+def move(ctx, table, target_schema):
+    client = ctx.obj["client"]
+    client.move(table, target_schema)
+    logging.info("OK")
+
 
 if __name__ == "__main__":
     try:

@@ -1,9 +1,8 @@
 # coding: utf-8
-__version__ = "0.7.0"
+__version__ = "0.8.2"
 
 from .oep_client import OepClient
 from .oep_client import (
-    DEFAULT_PROTOCOL,
     DEFAULT_HOST,
     DEFAULT_API_VERSION,
     DEFAULT_SCHEMA,
