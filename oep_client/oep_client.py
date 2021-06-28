@@ -62,7 +62,8 @@ class OepTableNotFoundException(OepClientSideException):
     def __init__(self, _msg):
         # the API falsely returns message: {'detail': 'You do not have permission to perform this action}
         # but this is only because table  does not exist
-        super().__init__("Table does not exist")
+        # TODO: create better error message on server side!
+        super().__init__("Table does not exist OR you don't have permission")
 
 
 class OepTableAlreadyExistsException(OepClientSideException):
@@ -450,7 +451,7 @@ class OepClient:
             rowcount = rec["rowcount"]
         return rowcount
 
-    def table_move(self, table, target_schema, schema=None):
+    def move_table(self, table, target_schema, schema=None):
         """Move table into new target schema
         """
         url = self._get_table_url(table=table, schema=schema) + 'move/%s/' % target_schema

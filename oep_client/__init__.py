@@ -1,5 +1,5 @@
 # coding: utf-8
-__version__ = "0.8.3"
+__version__ = "0.8.4"
 
 from .oep_client import OepClient
 from .oep_client import (
