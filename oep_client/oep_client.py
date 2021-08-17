@@ -30,6 +30,7 @@ import logging
 import json
 import math
 import re
+import functools
 
 import click
 import requests
@@ -83,11 +84,13 @@ def fix_column_definition(definition):
     return definition
 
 
+
 def check_exception(pattern, exception):
     """create decorator for custom Exceptions.
-    """
-
+    """        
     def decorator(fun):
+        
+        @functools.wraps(fun)
         def _fun(*args, **kwargs):
             try:
                 return fun(*args, **kwargs)
