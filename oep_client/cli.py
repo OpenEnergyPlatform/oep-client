@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.8.5"
+__version__ = "0.9.0"
 
 import sys
 import logging
@@ -12,7 +12,8 @@ import pandas as pd
 from numpy import nan
 
 import os
-sys.path.insert(0, os.path.join(os.path.basename(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.basename(__file__), ".."))
 
 from oep_client.oep_client import (
     OepClient,
@@ -23,7 +24,7 @@ from oep_client.oep_client import (
     DEFAULT_BATCH_SIZE,
     OepClientSideException,
     OepApiException,
-    fix_table_definition
+    fix_table_definition,
 )
 from oep_client.test import roundtrip
 
@@ -162,9 +163,9 @@ def create_table(ctx, table, metadata_file, encoding):
     client = ctx.obj["client"]
     client.create_table(table, definition)
     # automatically upload metadata?
-    #client.set_metadata(table, metadata)
+    # client.set_metadata(table, metadata)
 
-    #logging.info("OK")
+    # logging.info("OK")
 
 
 @main.command("drop")
@@ -208,6 +209,7 @@ def select_from_table(ctx, table, data_file, sheet, delimiter):
 @main.group("metadata")
 def metadata():
     pass
+
 
 @metadata.command("get")
 @click.pass_context

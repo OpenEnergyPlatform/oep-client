@@ -9,6 +9,7 @@ from . import OepClient
 TOKEN_ENV_VAR = "OEP_API_TOKEN"
 SCHEMA = "sandbox"
 MAX_TRIES = 10
+BATCH_SIZE = 1
 
 TEST_TABLE_DEFINITION = {
     "columns": [
@@ -30,10 +31,10 @@ TEST_TABLE_DATA = [
 
 def roundtrip(client, schema=SCHEMA):
     """
-        * create table
-        * upload data
-        * download data
-        * delete table
+    * create table
+    * upload data
+    * download data
+    * delete table
     """
     # create a random test table name that does not exist
     tries_left = MAX_TRIES
@@ -43,8 +44,7 @@ def roundtrip(client, schema=SCHEMA):
             break
         if not tries_left:
             raise Exception(
-                "Could not create a random test table name after %d tries"
-                % MAX_TRIES
+                "Could not create a random test table name after %d tries" % MAX_TRIES
             )
 
     client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
@@ -53,7 +53,8 @@ def roundtrip(client, schema=SCHEMA):
     client.drop_table(table_name, schema=schema)
     return data
 
-class TestTemplate(unittest.TestCase):
+
+class TestRoundtrip(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         token = os.environ.get(TOKEN_ENV_VAR)
@@ -71,4 +72,5 @@ class TestTemplate(unittest.TestCase):
 
     def test_roundtrip(self):
         data = roundtrip(self.client)
+        logging.error(data)
         self.assertEqual(data, TEST_TABLE_DATA)

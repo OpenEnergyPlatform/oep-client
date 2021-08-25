@@ -84,12 +84,10 @@ def fix_column_definition(definition):
     return definition
 
 
-
 def check_exception(pattern, exception):
-    """create decorator for custom Exceptions.
-    """        
+    """create decorator for custom Exceptions."""
+
     def decorator(fun):
-        
         @functools.wraps(fun)
         def _fun(*args, **kwargs):
             try:
@@ -103,28 +101,6 @@ def check_exception(pattern, exception):
         return _fun
 
     return decorator
-
-
-def batch_call(data, batch_size, fun):
-    """split data into batches and perform function on each
-
-    Args:
-        data(list): list of items
-        fun(function): callable with one argument
-        batch_size(int): number of records per batch
-        eval_res(function, optional): callable with two arguments to evaluate/aggregate returns: batch, result
-    """
-
-    n_batches = math.ceil(len(data) / batch_size)
-    batches = [data[i * batch_size : (i + 1) * batch_size] for i in range(n_batches)]
-
-    n_items = 0
-    with click.progressbar(batches) as batch_iterator:
-        for batch in batch_iterator:
-            fun(batch)
-            n_items += len(batch)
-
-    return {"batch_size": batch_size, "n_batches": len(batches), "n_items": n_items}
 
 
 class OepClient:
@@ -269,7 +245,7 @@ class OepClient:
     # inconsistent message from server: "do not have permission" when table does not exist
     @check_exception("do not have permission", OepTableNotFoundException)
     def insert_into_table(
-        self, table, data, schema=None, batch_size=None, method="advanced"
+        self, table, data, schema=None, batch_size=None, method="api"
     ):
         """Insert records into table.
 
@@ -299,26 +275,47 @@ class OepClient:
                 "Columns not in table: %s", unknown_column_names
             )
 
-        batch_size = batch_size or self.batch_size
-        if batch_size:
-            method = "advanced"
+        batch_size = (batch_size or self.batch_size) or 1
+        n_batches = math.ceil(len(data) / batch_size)
+        data_batches = [
+            data[i * batch_size : (i + 1) * batch_size] for i in range(n_batches)
+        ]
 
-        try_number = 0
-        while try_number <= self.insert_retries:
-            try_number += 1
-            try:
-                if method == "api":
-                    return self._insert_into_table_api(table, data, schema)
-                elif method == "advanced":
-                    with AdvancedApiSession(self) as ses:
-                        return ses.insert_into_table(table, data, schema, batch_size)
-                else:
-                    raise NotImplementedError(method)
-            except OepServerSideException:
-                if try_number <= self.insert_retries:
-                    logging.warning("A server side error occurred. retrying...")
+        n_items = 0
+        with click.progressbar(data_batches) as data_parts:
+            for i_item, data_part in enumerate(data_parts):
+                logging.debug(
+                    "Starting upload batch %d/%d (%d/%d)...",
+                    i_item + 1,
+                    n_batches,
+                    n_items,
+                    len(data),
+                )
+                try_number = 0
+                success = False
+                while try_number <= self.insert_retries:
+                    try_number += 1
+                    try:
+                        if method == "api":
+                            self._insert_into_table_api(table, data_part, schema)
+                        elif method == "advanced":
+                            with AdvancedApiSession(self) as ses:
+                                ses.insert_into_table(table, data_part, schema)
+                        else:
+                            raise NotImplementedError(method)
+                        # batch upload ok
+                        success = True
+                        break
+                    except OepServerSideException:
+                        if try_number <= self.insert_retries:
+                            logging.warning("A server side error occurred. retrying...")
 
-        raise OepServerSideException()
+                if not success:
+                    raise OepServerSideException()
+
+                n_items += len(data_part)
+
+        # todo: return info to user?
 
     def _insert_into_table_api(self, table, data, schema):
         """Insert records into table.
@@ -455,14 +452,15 @@ class OepClient:
         return rowcount
 
     def move_table(self, table, target_schema, schema=None):
-        """Move table into new target schema
-        """
-        url = self._get_table_url(table=table, schema=schema) + 'move/%s/' % target_schema
+        """Move table into new target schema"""
+        url = (
+            self._get_table_url(table=table, schema=schema) + "move/%s/" % target_schema
+        )
         return self._request("POST", url, 200)
 
+
 class AdvancedApiSession:
-    """Context for advanced api session (close connection on exit)
-    """
+    """Context for advanced api session (close connection on exit)"""
 
     def __init__(self, oepclient):
         """
@@ -502,7 +500,7 @@ class AdvancedApiSession:
             logging.debug("Closed connection: %s", self.connection_id)
             self.connection_id = None
 
-    def insert_into_table(self, table, data, schema, batch_size):
+    def insert_into_table(self, table, data, schema):
         """Insert records into table.
 
         Args:
@@ -511,7 +509,6 @@ class AdvancedApiSession:
             data(list): list of records(dict: column_name -> value)
             schema(str): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
-            batch_size(int): defaults to client's default batch size
         """
 
         if not isinstance(data, (list, tuple)) or (
@@ -530,12 +527,7 @@ class AdvancedApiSession:
             return {"query": query}
 
         try:
-            if batch_size:
-                insert = lambda batch: self._command("insert", _get_query(batch))
-                res = batch_call(data, batch_size, insert)
-            else:
-                res = self._command("insert", _get_query(data))
-
+            res = self._command("insert", _get_query(data))
             self._command("connection/commit")
             return res
         except Exception as exc:
