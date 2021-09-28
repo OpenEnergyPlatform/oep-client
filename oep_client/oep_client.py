@@ -39,8 +39,8 @@ import requests
 DEFAULT_HOST = "https://openenergy-platform.org"
 DEFAULT_API_VERSION = "v0"
 DEFAULT_SCHEMA = "model_draft"
-DEFAULT_BATCH_SIZE = None
-DEFAULT_INSERT_RETRIES = 0
+DEFAULT_BATCH_SIZE = 5000
+DEFAULT_INSERT_RETRIES = 10
 
 
 class OepApiException(Exception):
@@ -261,11 +261,8 @@ class OepClient:
                 * 'advanced' (default): sent records via advanced API
         """
 
-        table_def = self._get_table_definition(table, schema=schema)
-        column_names = [
-            c["name"]
-            for c in sorted(table_def["columns"], key=lambda c: c["ordinal_position"])
-        ]
+        table_def = self.get_table_definition(table, schema=schema)
+        column_names = [c["name"] for c in table_def["columns"]]
         used_column_names = set()
         for row in data:
             used_column_names = used_column_names | set(row.keys())
@@ -275,7 +272,7 @@ class OepClient:
                 "Columns not in table: %s", unknown_column_names
             )
 
-        batch_size = (batch_size or self.batch_size) or 1
+        batch_size = batch_size or self.batch_size
         n_batches = math.ceil(len(data) / batch_size)
         data_batches = [
             data[i * batch_size : (i + 1) * batch_size] for i in range(n_batches)
@@ -336,7 +333,7 @@ class OepClient:
         return res
 
     @check_exception("not found", OepTableNotFoundException)
-    def _get_table_definition(self, table, schema=None):
+    def get_table_definition(self, table, schema=None):
         """Returns table info
 
         Args:
@@ -348,13 +345,77 @@ class OepClient:
         """
         url = self._get_table_url(table=table, schema=schema)
         res = self._request("GET", url, 200)
+        definition = {
+            "columns": [],
+            "constraints": [],
+        }
+
+        # res["columns"] is dict
+        # first: add constrains to field definitions / constraints
+        for const in res["constraints"].values():
+            const_type = const["constraint_type"]
+            const_def = const["definition"]
+            if const_type == "PRIMARY KEY":
+                args = re.match(
+                    r"^PRIMARY KEY \((?P<field>[^)]+)\)$", const_def
+                ).groupdict()
+                # NOTE currently only single field PK allowed
+                res["columns"][args["field"]]["primary_key"] = True
+            elif const_type == "FOREIGN KEY":
+                args = re.match(
+                    r"^FOREIGN KEY \((?P<field>[^)]+)\) REFERENCES (?P<ref_schema>[^.]+)\.(?P<ref_table>[^()]+)\((?P<ref_field>[^)]+)\)$",
+                    const_def,
+                ).groupdict()
+                # NOTE currently only single field PK allowed
+                res["columns"][args["field"]]["foreign_key"] = [
+                    {
+                        "schema": args["ref_schema"],
+                        "table": args["ref_table"],
+                        "column": args["ref_field"],
+                    }
+                ]
+            elif const_type == "UNIQUE":
+                args = re.match(
+                    r"^UNIQUE \((?P<fields>[^)]+)\)$", const_def
+                ).groupdict()
+                columns = [f.strip() for f in args["fields"].split(",")]
+                definition["constraints"].append(
+                    {"constraint_type": "UNIQUE", "columns": columns}
+                )
+
+        def get_datatype(coldef):
+            dt = coldef["data_type"].upper()
+            if dt == "CHARACTER":
+                dt = "CHAR(%d)" % coldef["character_maximum_length"]
+            elif dt == "CHARACTER VARYING":
+                dt = "VARCHAR(%d)" % coldef["character_maximum_length"]
+            elif dt == "DOUBLE PRECISION":
+                dt = "FLOAT"
+
+            if (coldef["column_default"] or "").startswith("nextval"):
+                if not "INT" in dt:
+                    raise NotImplementedError(dt)
+                else:
+                    dt = dt.replace("INT", "SERIAL")
+
+            return dt
+
         # fix columns: list instead of dict
-        for name, col in res["columns"].items():
-            col["name"] = name
-        res["columns"] = sorted(
-            res["columns"].values(), key=lambda c: c["ordinal_position"]
-        )
-        return res
+        for name, coldef in sorted(
+            res["columns"].items(), key=lambda c: c[1]["ordinal_position"]
+        ):
+            col = {
+                "name": name,
+                "data_type": get_datatype(coldef),
+                "is_nullable": coldef["is_nullable"],
+            }
+            if coldef.get("primary_key", False):
+                col["primary_key"] = True
+            if "foreign_key" in coldef:
+                col["foreign_key"] = coldef["foreign_key"]
+            definition["columns"].append(col)
+
+        return definition
 
     def table_exists(self, table, schema=None):
         """True or False
@@ -366,11 +427,26 @@ class OepClient:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
+
         try:
-            self._get_table_definition(table, schema)
-            return True
+            return self._table_exists(table, schema)
         except OepTableNotFoundException:
             return False
+
+    @check_exception("not found", OepTableNotFoundException)
+    def _table_exists(self, table, schema=None):
+        """True or False
+
+        Args:
+            table(str): table name. Must be valid postgres table name,
+                all lowercase, only letters, numbers and underscore
+
+            schema(str, optional): table schema name.
+                defaults to self.default_schema which is usually "model_draft"
+        """
+        url = self._get_table_url(table=table, schema=schema)
+        self._request("GET", url, 200)
+        return True
 
     def get_metadata(self, table, schema=None):
         """Returns metadata json
@@ -500,14 +576,14 @@ class AdvancedApiSession:
             logging.debug("Closed connection: %s", self.connection_id)
             self.connection_id = None
 
-    def insert_into_table(self, table, data, schema):
+    def insert_into_table(self, table, data, schema=None):
         """Insert records into table.
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
             data(list): list of records(dict: column_name -> value)
-            schema(str): table schema name.
+            schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
 
