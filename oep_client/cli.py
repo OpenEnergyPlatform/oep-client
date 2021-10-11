@@ -17,15 +17,15 @@ sys.path.insert(0, os.path.join(os.path.basename(__file__), ".."))
 
 from oep_client.oep_client import (
     OepClient,
+    DEFAULT_PROTOCOL,
     DEFAULT_HOST,
     DEFAULT_API_VERSION,
     DEFAULT_SCHEMA,
     DEFAULT_INSERT_RETRIES,
     DEFAULT_BATCH_SIZE,
-    OepClientSideException,
-    OepApiException,
     fix_table_definition,
 )
+from oep_client.exceptions import OepClientSideException, OepApiException
 from oep_client.test import roundtrip
 
 PROG_NAME = "oep-client"
@@ -124,6 +124,7 @@ def write_dataframe(df, filepath, **kwargs):
     type=click.Choice(["debug", "info", "warning", "error"]),
 )
 @click.option("--token", "-t")
+@click.option("--protocol", default=DEFAULT_PROTOCOL)
 @click.option("--host", default=DEFAULT_HOST)
 @click.option("--api-version", default=DEFAULT_API_VERSION)
 @click.option("--schema", "-s", default=DEFAULT_SCHEMA)
@@ -133,6 +134,7 @@ def main(
     ctx,
     loglevel,
     token,
+    protocol,
     host,
     api_version,
     schema,
@@ -144,6 +146,7 @@ def main(
     ctx.ensure_object(dict)
     ctx.obj["client"] = OepClient(
         token=token,
+        protocol=protocol,
         host=host,
         api_version=api_version,
         default_schema=schema,

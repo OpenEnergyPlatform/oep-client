@@ -4,7 +4,7 @@ Version: 0.1
 
 Example usage: create a table, insert data, retrieve data, delete table
 
-cli = OEPClient(token='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+cli = OepClient(token='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 
 table = 'my_awesome_test_table'
 definition = {
@@ -35,40 +35,21 @@ import functools
 import click
 import requests
 
+from .exceptions import (
+    OepServerSideException,
+    OepClientSideException,
+    OepAuthenticationException,
+    OepTableNotFoundException,
+    OepTableAlreadyExistsException,
+)
+from .advanced_api import AdvancedApiSession
 
-DEFAULT_HOST = "https://openenergy-platform.org"
+DEFAULT_HOST = "openenergy-platform.org"
+DEFAULT_PROTOCOL = "https"
 DEFAULT_API_VERSION = "v0"
 DEFAULT_SCHEMA = "model_draft"
 DEFAULT_BATCH_SIZE = 5000
 DEFAULT_INSERT_RETRIES = 10
-
-
-class OepApiException(Exception):
-    pass
-
-
-class OepServerSideException(OepApiException):
-    pass
-
-
-class OepClientSideException(OepApiException):
-    pass
-
-
-class OepAuthenticationException(OepClientSideException):
-    pass
-
-
-class OepTableNotFoundException(OepClientSideException):
-    def __init__(self, _msg):
-        # the API falsely returns message: {'detail': 'You do not have permission to perform this action}
-        # but this is only because table  does not exist
-        # TODO: create better error message on server side!
-        super().__init__("Table does not exist OR you don't have permission")
-
-
-class OepTableAlreadyExistsException(OepClientSideException):
-    pass
 
 
 def fix_table_definition(definition):
@@ -109,6 +90,7 @@ class OepClient:
     def __init__(
         self,
         token=None,
+        protocol=DEFAULT_PROTOCOL,
         host=DEFAULT_HOST,
         api_version=DEFAULT_API_VERSION,
         default_schema=DEFAULT_SCHEMA,
@@ -118,7 +100,8 @@ class OepClient:
         """
         Args:
             token(str): your API token
-            host(str, optional): host of the oep platform. default is "https://openenergy-platform.org"
+            host(str, optional): default is "https". "http" may be used for local installations
+            host(str, optional): host of the oep platform. default is "openenergy-platform.org"
             api_version(str, optional): currently only "v0"
             default_schema(str, optional): the default schema for the tables, usually "model_draft"
             batch_size(int, optional): number of records that will be uploaded per batch.
@@ -126,7 +109,7 @@ class OepClient:
             insert_retries(int, optional): number of insert_retries for insert on OepServerSideExceptions
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
-        self.api_url = "%s/api/%s/" % (host, api_version)
+        self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
         self.default_schema = default_schema
         self.batch_size = batch_size
         self.insert_retries = insert_retries
@@ -533,80 +516,3 @@ class OepClient:
             self._get_table_url(table=table, schema=schema) + "move/%s/" % target_schema
         )
         return self._request("POST", url, 200)
-
-
-class AdvancedApiSession:
-    """Context for advanced api session (close connection on exit)"""
-
-    def __init__(self, oepclient):
-        """
-        Args:
-
-            oepclient(OEPClient)
-        """
-        self.oepclient = oepclient
-        self.api_url = self.oepclient.api_url + "advanced/"
-        self.connection_id = None
-        self.cursor_id = None
-
-    def _command(self, command, jsondata=None):
-        url = self.api_url + command
-        jsondata = jsondata or {}
-        if self.connection_id:
-            jsondata["connection_id"] = self.connection_id
-        if self.cursor_id:
-            jsondata["cursor_id"] = self.cursor_id
-        return self.oepclient._request("POST", url, 200, jsondata)
-
-    def __enter__(self):
-        self.connection_id = self._command("connection/open")["content"][
-            "connection_id"
-        ]
-        self.cursor_id = self._command("cursor/open")["content"]["cursor_id"]
-        logging.debug("Started connection: %s", self.connection_id)
-        return self
-
-    def __exit__(self, *args):
-        if self.cursor_id:
-            self._command("cursor/close")
-            logging.debug("Closed cursor: %s", self.cursor_id)
-            self.cursor_id = None
-        if self.connection_id:
-            self._command("connection/close")
-            logging.debug("Closed connection: %s", self.connection_id)
-            self.connection_id = None
-
-    def insert_into_table(self, table, data, schema=None):
-        """Insert records into table.
-
-        Args:
-            table(str): table name. Must be valid postgres table name,
-                all lowercase, only letters, numbers and underscore
-            data(list): list of records(dict: column_name -> value)
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
-        """
-
-        if not isinstance(data, (list, tuple)) or (
-            data and not isinstance(data[0], dict)
-        ):
-            raise OepClientSideException(
-                "data must be list or tuple of record dictionaries"
-            )
-
-        def _get_query(values):
-            query = {
-                "schema": schema or self.oepclient.default_schema,
-                "table": table,
-                "values": values,
-            }
-            return {"query": query}
-
-        try:
-            res = self._command("insert", _get_query(data))
-            self._command("connection/commit")
-            return res
-        except Exception as exc:
-            logging.error(exc)
-            self._command("connection/rollback")
-            raise
