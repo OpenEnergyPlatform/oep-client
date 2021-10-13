@@ -43,6 +43,7 @@ from .exceptions import (
     OepTableAlreadyExistsException,
 )
 from .advanced_api import AdvancedApiSession
+from .dialect import get_sqlalchemy_table
 
 DEFAULT_HOST = "openenergy-platform.org"
 DEFAULT_PROTOCOL = "https"
@@ -110,6 +111,9 @@ class OepClient:
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
         self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
+        self.protocol = protocol
+        self.host = host
+        self.token = token
         self.default_schema = default_schema
         self.batch_size = batch_size
         self.insert_retries = insert_retries
@@ -516,3 +520,6 @@ class OepClient:
             self._get_table_url(table=table, schema=schema) + "move/%s/" % target_schema
         )
         return self._request("POST", url, 200)
+
+    def get_sqlalchemy_table(self, table, schema=None):
+        return get_sqlalchemy_table(self, table, schema=schema)

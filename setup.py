@@ -13,7 +13,7 @@ setup(
     author="Christian Winger",
     author_email="c.winger@oeko.de",
     url="https://github.com/wingechr/oep-client",
-    install_requires=["requests", "pandas", "click"],
+    install_requires=["requests", "pandas", "click", "sqlalchemy>=1.3.0,<1.4", "oedialect"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

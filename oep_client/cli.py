@@ -27,6 +27,8 @@ from oep_client.oep_client import (
 )
 from oep_client.exceptions import OepClientSideException, OepApiException
 from oep_client.test import roundtrip
+from oep_client.advanced_api import AdvancedApiSession
+from oep_client.dialect import get_sqlalchemy_table
 
 PROG_NAME = "oep-client"
 LOGGING_DATE_FMT = "%Y-%m-%d %H:%M:%S"
@@ -109,6 +111,10 @@ def write_dataframe(df, filepath, **kwargs):
         if not sheet:
             raise OepClientSideException("Must specify sheet when reading excel files")
         df.to_excel(filepath, sheet, index=False)
+    elif filepath == '-':
+        # stdout
+        s = df.to_string(index=False)
+        print(s)
     else:
         raise OepClientSideException("Unsupported filetype: %s" % filepath)
     return df
@@ -202,9 +208,9 @@ def insert_into_table(ctx, table, data_file, encoding, sheet, delimiter):
 @click.option("--sheet", "-s", default=None)
 @click.option("--delimiter", "-d", default=",")
 def select_from_table(ctx, table, data_file, sheet, delimiter):
-    client = ctx.obj["client"]
-    data = client.select_from_table(table)
-    df = records_to_dataframe(data)
+    client = ctx.obj["client"]    
+    data = client.select_from_table(table)    
+    df = records_to_dataframe(data)    
     write_dataframe(df, data_file, sheet=sheet, delimiter=delimiter)
     logging.info("OK")
 
@@ -255,6 +261,7 @@ def move_table(ctx, table, target_schema):
     client.move_table(table, target_schema)
     logging.info("OK")
 
+   
 
 if __name__ == "__main__":
     try:

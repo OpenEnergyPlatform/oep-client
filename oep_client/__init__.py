@@ -20,3 +20,4 @@ from .exceptions import (
     OepTableNotFoundException,
     OepTableAlreadyExistsException,
 )
+from .dialect import get_sqlalchemy_table
