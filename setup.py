@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="oep-client",
-    version="0.9.1",
+    version="0.10.0",
     description="client side tool for openenergy platform",
     long_description_content_type="text/markdown",
     long_description=long_description,
@@ -13,7 +13,13 @@ setup(
     author="Christian Winger",
     author_email="c.winger@oeko.de",
     url="https://github.com/wingechr/oep-client",
-    install_requires=["requests", "pandas", "click", "sqlalchemy>=1.3.0,<1.4", "oedialect"],
+    install_requires=[
+        "requests",
+        "pandas",
+        "click",
+        "sqlalchemy>=1.3.0,<1.4",
+        "oedialect",
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

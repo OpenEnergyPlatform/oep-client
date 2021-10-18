@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.9.1"
+__version__ = "0.10.0"
 
 import sys
 import logging
@@ -111,7 +111,7 @@ def write_dataframe(df, filepath, **kwargs):
         if not sheet:
             raise OepClientSideException("Must specify sheet when reading excel files")
         df.to_excel(filepath, sheet, index=False)
-    elif filepath == '-':
+    elif filepath == "-":
         # stdout
         s = df.to_string(index=False)
         print(s)
@@ -208,9 +208,9 @@ def insert_into_table(ctx, table, data_file, encoding, sheet, delimiter):
 @click.option("--sheet", "-s", default=None)
 @click.option("--delimiter", "-d", default=",")
 def select_from_table(ctx, table, data_file, sheet, delimiter):
-    client = ctx.obj["client"]    
-    data = client.select_from_table(table)    
-    df = records_to_dataframe(data)    
+    client = ctx.obj["client"]
+    data = client.select_from_table(table)
+    df = records_to_dataframe(data)
     write_dataframe(df, data_file, sheet=sheet, delimiter=delimiter)
     logging.info("OK")
 
@@ -261,7 +261,24 @@ def move_table(ctx, table, target_schema):
     client.move_table(table, target_schema)
     logging.info("OK")
 
-   
+
+@main.command("count")
+@click.pass_context
+@click.argument("table")
+def count(ctx, table):
+    client = ctx.obj["client"]
+    n_rows = client.count_rows(table)
+    logging.info("%d", n_rows)
+
+
+@main.command("delete")
+@click.pass_context
+@click.argument("table")
+def delete(ctx, table):
+    client = ctx.obj["client"]
+    client.delete_from_table(table)
+    logging.info("OK")
+
 
 if __name__ == "__main__":
     try:

@@ -53,10 +53,7 @@ class AdvancedApiSession:
             self.connection_id = None
 
     def _get_query(self, table, schema=None, **kwargs):
-        query = {
-            "schema": schema or self.oepclient.default_schema,
-            "table": table
-        }
+        query = {"schema": schema or self.oepclient.default_schema, "table": table}
         query.update(kwargs)
         return query
 
@@ -77,7 +74,7 @@ class AdvancedApiSession:
             raise OepClientSideException(
                 "data must be list or tuple of record dictionaries"
             )
-        
+
         query = self._get_query(table, schema=schema, values=data)
         return self._command("insert", query)
 
@@ -97,4 +94,16 @@ class AdvancedApiSession:
         query = self._get_query(table, schema=schema)
         return self._command("search", query)
 
-        
+    def delete_from_table(self, table, schema=None):
+        """Delete all rows from table (without dropping it).
+
+        Args:
+            table(str): table name. Must be valid postgres table name,
+                all lowercase, only letters, numbers and underscore
+            schema(str, optional): table schema name.
+                defaults to self.default_schema which is usually "model_draft"
+
+        """
+
+        query = self._get_query(table, schema=schema)
+        return self._command("delete", query)

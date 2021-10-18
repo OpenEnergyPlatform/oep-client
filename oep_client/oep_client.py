@@ -1,7 +1,5 @@
 """Small client implementation to use the oep API.
 
-Version: 0.1
-
 Example usage: create a table, insert data, retrieve data, delete table
 
 cli = OepClient(token='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
@@ -503,11 +501,10 @@ class OepClient:
         }
         with self.advanced_session() as sas:
             # not data yet
-            res = sas._command("search", {"query": query})
+            res = sas._command("search", query)
             content = res["content"]
             description = content["description"]
             fieldnames = [f[0] for f in description]
-            _rowcount = content["rowcount"]  # should be 1
             res = sas._command("cursor/fetch_one")
             content = res["content"]
             rec = dict(zip(fieldnames, content))
@@ -523,3 +520,16 @@ class OepClient:
 
     def get_sqlalchemy_table(self, table, schema=None):
         return get_sqlalchemy_table(self, table, schema=schema)
+
+    def delete_from_table(self, table, schema=None):
+        """Delete all rows from table (without dropping it).
+
+        Args:
+            table(str): table name. Must be valid postgres table name,
+                all lowercase, only letters, numbers and underscore
+            schema(str, optional): table schema name.
+                defaults to self.default_schema which is usually "model_draft"
+
+        """
+        with self.advanced_session() as sas:
+            sas.delete_from_table(table, schema=schema)
