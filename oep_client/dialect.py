@@ -12,10 +12,17 @@ def get_sqlalchemy_table(oepclient, table, schema=None):
     import sqlalchemy as sa
 
     os.environ["OEDIALECT_PROTOCOL"] = oepclient.protocol
-    connection_string = "postgresql+oedialect://:%s@%s" % (
-        oepclient.token,
-        oepclient.host,
-    )
+    
+    if oepclient.token:
+        connection_string = "postgresql+oedialect://:%s@%s" % (
+            oepclient.token,
+            oepclient.host,
+        )
+    else:
+        connection_string = "postgresql+oedialect://%s" % (
+            oepclient.host,
+        )
+        
     engine = sa.create_engine(connection_string)
     metadata = sa.MetaData(bind=engine)
     schema = schema or oepclient.default_schema
