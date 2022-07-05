@@ -1,5 +1,6 @@
-from .exceptions import OepClientSideException
 import logging
+
+from .exceptions import OepClientSideException
 
 
 class AdvancedApiSession:

@@ -2,33 +2,27 @@
 """
 __version__ = "0.11.0"
 
-import sys
-import logging
 import json
+import logging
 import re
+import sys
 
 import click
 import pandas as pd
 from numpy import nan
 
-import os
-
-sys.path.insert(0, os.path.join(os.path.basename(__file__), ".."))
-
+from oep_client.exceptions import OepApiException, OepClientSideException
 from oep_client.oep_client import (
-    OepClient,
-    DEFAULT_PROTOCOL,
-    DEFAULT_HOST,
     DEFAULT_API_VERSION,
-    DEFAULT_SCHEMA,
-    DEFAULT_INSERT_RETRIES,
     DEFAULT_BATCH_SIZE,
+    DEFAULT_HOST,
+    DEFAULT_INSERT_RETRIES,
+    DEFAULT_PROTOCOL,
+    DEFAULT_SCHEMA,
+    OepClient,
     fix_table_definition,
 )
-from oep_client.exceptions import OepClientSideException, OepApiException
 from oep_client.test import roundtrip
-from oep_client.advanced_api import AdvancedApiSession
-from oep_client.dialect import get_sqlalchemy_table
 
 PROG_NAME = "oep-client"
 LOGGING_DATE_FMT = "%Y-%m-%d %H:%M:%S"

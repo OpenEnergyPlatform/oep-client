@@ -22,26 +22,26 @@ cli.insert_into_table(table, data)
 return_data = cli.select_from_table(table)
 cli.drop_table(table)
 
-"""
+"""  # noqa
 
-import logging
+import functools
 import json
+import logging
 import math
 import re
-import functools
 
 import click
 import requests
 
-from .exceptions import (
-    OepServerSideException,
-    OepClientSideException,
-    OepAuthenticationException,
-    OepTableNotFoundException,
-    OepTableAlreadyExistsException,
-)
 from .advanced_api import AdvancedApiSession
 from .dialect import get_sqlalchemy_table
+from .exceptions import (
+    OepAuthenticationException,
+    OepClientSideException,
+    OepServerSideException,
+    OepTableAlreadyExistsException,
+    OepTableNotFoundException,
+)
 
 DEFAULT_HOST = "openenergy-platform.org"
 DEFAULT_PROTOCOL = "https"
@@ -99,13 +99,18 @@ class OepClient:
         """
         Args:
             token(str): your API token
-            host(str, optional): default is "https". "http" may be used for local installations
-            host(str, optional): host of the oep platform. default is "openenergy-platform.org"
+            host(str, optional): default is "https". "http" may be used for
+              local installations
+            host(str, optional): host of the oep platform.
+              default is "openenergy-platform.org"
             api_version(str, optional): currently only "v0"
-            default_schema(str, optional): the default schema for the tables, usually "model_draft"
-            batch_size(int, optional): number of records that will be uploaded per batch.
+            default_schema(str, optional): the default schema for the tables,
+              usually "model_draft"
+            batch_size(int, optional): number of records that will be uploaded
+              per batch.
                if 0 or None: do not use batches
-            insert_retries(int, optional): number of insert_retries for insert on OepServerSideExceptions
+            insert_retries(int, optional): number of insert_retries for insert
+               on OepServerSideExceptions
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
         self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
@@ -139,7 +144,8 @@ class OepClient:
             url(str): request url
             expected_status(int): expected http status code.
                 if result has a different code, an error will be raised
-            jsondata(object, optional): payload that will be send as json in the request.
+            jsondata(object, optional): payload that will be send as json
+                in the request.
         Returns:
             result object from returned json data
         """
@@ -190,13 +196,14 @@ class OepClient:
 
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
-        """
+        """  # noqa
         url = self._get_table_url(table=table, schema=schema)
         definition = fix_table_definition(definition)
         logging.debug(definition)
         return self._request("PUT", url, 201, {"query": definition})
 
-    # inconsistent message from server: "do not have permission" when table does not exist
+    # inconsistent message from server:
+    # "do not have permission" when table does not exist
     @check_exception("do not have permission", OepTableNotFoundException)
     def drop_table(self, table, schema=None):
         """Drop table.
@@ -227,7 +234,8 @@ class OepClient:
         res = self._request("GET", url, 200)
         return res
 
-    # inconsistent message from server: "do not have permission" when table does not exist
+    # inconsistent message from server:
+    # "do not have permission" when table does not exist
     @check_exception("do not have permission", OepTableNotFoundException)
     def insert_into_table(
         self, table, data, schema=None, batch_size=None, method="api"
@@ -348,7 +356,7 @@ class OepClient:
                 res["columns"][args["field"]]["primary_key"] = True
             elif const_type == "FOREIGN KEY":
                 args = re.match(
-                    r"^FOREIGN KEY \((?P<field>[^)]+)\) REFERENCES (?P<ref_schema>[^.]+)\.(?P<ref_table>[^()]+)\((?P<ref_field>[^)]+)\)$",
+                    r"^FOREIGN KEY \((?P<field>[^)]+)\) REFERENCES (?P<ref_schema>[^.]+)\.(?P<ref_table>[^()]+)\((?P<ref_field>[^)]+)\)$",  # noqa
                     const_def,
                 ).groupdict()
                 # NOTE currently only single field PK allowed
@@ -378,7 +386,7 @@ class OepClient:
                 dt = "FLOAT"
 
             if (coldef["column_default"] or "").startswith("nextval"):
-                if not "INT" in dt:
+                if "INT" not in dt:
                     raise NotImplementedError(dt)
                 else:
                     dt = dt.replace("INT", "SERIAL")

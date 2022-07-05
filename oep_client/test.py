@@ -1,8 +1,8 @@
 # coding: utf-8
-import unittest
-import random
 import logging
 import os
+import random
+import unittest
 
 from . import OepClient
 
