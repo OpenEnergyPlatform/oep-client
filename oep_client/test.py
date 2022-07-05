@@ -25,7 +25,7 @@ TEST_TABLE_DEFINITION = {
 }
 TEST_TABLE_DATA = [
     {"id": 1, "field1": "test", "field2": 100},
-    {"id": 2, "field1": "test2", "field2": None},
+    {"id": 2, "field1": "test² öäü 😀", "field2": None},
 ]
 
 
@@ -72,5 +72,5 @@ class TestRoundtrip(unittest.TestCase):
 
     def test_roundtrip(self):
         data = roundtrip(self.client)
-        logging.error(data)
+        logging.info(data)
         self.assertEqual(data, TEST_TABLE_DATA)
