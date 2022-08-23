@@ -17,8 +17,8 @@ class AdvancedApiSession:
         self.connection_id = None
         self.cursor_id = None
 
-    def _command(self, command, query=None):
-        url = self.api_url + command
+    def _command(self, path, query=None, verb="POST", expected_status=200):
+        url = self.api_url + path
         jsondata = {}
         if self.connection_id:
             jsondata["connection_id"] = self.connection_id
@@ -27,7 +27,8 @@ class AdvancedApiSession:
         if query:
             jsondata["query"] = query
         logging.debug(jsondata)
-        return self.oepclient._request("POST", url, 200, jsondata)
+        res = self.oepclient._request(verb, url, expected_status, jsondata)
+        return res
 
     def __enter__(self):
         self.connection_id = self._command("connection/open")["content"][
@@ -93,7 +94,8 @@ class AdvancedApiSession:
         """
 
         query = self._get_query(table, schema=schema)
-        return self._command("search", query)
+        self._command("search", query)
+        return self._command("cursor/fetchall")
 
     def delete_from_table(self, table, schema=None):
         """Delete all rows from table (without dropping it).
