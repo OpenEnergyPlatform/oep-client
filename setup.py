@@ -17,7 +17,7 @@ setup(
         "requests",
         "pandas",
         "click",
-        "sqlalchemy>=1.3.0,<1.4",
+        "sqlalchemy",
         "oedialect",
     ],
     classifiers=[
