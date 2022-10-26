@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.11.1"
+__version__ = "0.12.0"
 
 import json
 import logging
@@ -26,7 +26,7 @@ from oep_client.test import roundtrip
 
 PROG_NAME = "oep-client"
 LOGGING_DATE_FMT = "%Y-%m-%d %H:%M:%S"
-LOGGING_FMT = "[%(asctime)s %(levelname)7s] %(message)s"
+LOGGING_FMT = "[%(asctime)s.%(msecs)03d %(levelname)7s] %(message)s"
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_INDENT = 2
 
@@ -240,9 +240,10 @@ def set_metadata(ctx, table, metadata_file, encoding):
 
 @main.command("test")
 @click.pass_context
-def test_roundtrip(ctx):
+@click.argument("test_schema", default="sandbox")
+def test_roundtrip(ctx, test_schema):
     client = ctx.obj["client"]
-    roundtrip(client)
+    roundtrip(client, schema=test_schema)
     logging.info("OK")
 
 

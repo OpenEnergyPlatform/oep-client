@@ -9,13 +9,14 @@ from . import OepClient
 TOKEN_ENV_VAR = "OEP_API_TOKEN"
 SCHEMA = "sandbox"
 MAX_TRIES = 10
-BATCH_SIZE = 1
+N_RECORDS = 1000
+
 
 TEST_TABLE_DEFINITION = {
     "columns": [
         {
             "name": "id",
-            "data_type": "bigint",
+            "data_type": "bigserial",
             "is_nullable": False,
             "primary_key": True,
         },
@@ -24,12 +25,11 @@ TEST_TABLE_DEFINITION = {
     ]
 }
 TEST_TABLE_DATA = [
-    {"id": 1, "field1": "test", "field2": 100},
-    {"id": 2, "field1": "test² öäü 😀", "field2": None},
+    {"field1": "test öäü 😀", "field2": None},  # some unicode data
 ]
 
 
-def roundtrip(client, schema=SCHEMA):
+def roundtrip(client, schema=SCHEMA, n_records=N_RECORDS):
     """
     * create table
     * upload data
@@ -46,9 +46,9 @@ def roundtrip(client, schema=SCHEMA):
             raise Exception(
                 "Could not create a random test table name after %d tries" % MAX_TRIES
             )
-
+    test_data = TEST_TABLE_DATA * n_records
     client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
-    client.insert_into_table(table_name, TEST_TABLE_DATA, schema=schema)
+    client.insert_into_table(table_name, test_data, schema=schema)
     data = client.select_from_table(table_name, schema=schema)
     client.drop_table(table_name, schema=schema)
     return data
