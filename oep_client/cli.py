@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.12.0"
+__version__ = "0.12.1"
 
 import json
 import logging
@@ -22,7 +22,7 @@ from oep_client.oep_client import (
     OepClient,
     fix_table_definition,
 )
-from oep_client.test import roundtrip
+from oep_client.test import TestRoundtrip
 
 PROG_NAME = "oep-client"
 LOGGING_DATE_FMT = "%Y-%m-%d %H:%M:%S"
@@ -198,14 +198,22 @@ def insert_into_table(ctx, table, data_file, encoding, sheet, delimiter):
 @main.command("select")
 @click.pass_context
 @click.argument("table")
-@click.argument("data_file", type=click.Path(exists=False))
+@click.argument("data_file", type=click.Path(exists=False), required=False)
+@click.option("--where", "-w", multiple=True)
 @click.option("--sheet", "-s", default=None)
 @click.option("--delimiter", "-d", default=",")
-def select_from_table(ctx, table, data_file, sheet, delimiter):
+def select_from_table(ctx, table, data_file, where, sheet, delimiter):
     client = ctx.obj["client"]
-    data = client.select_from_table(table)
-    df = records_to_dataframe(data)
-    write_dataframe(df, data_file, sheet=sheet, delimiter=delimiter)
+    data = client.select_from_table(table, where=where)
+    if data_file:
+        df = records_to_dataframe(data)
+        write_dataframe(df, data_file, sheet=sheet, delimiter=delimiter)
+    else:
+        # print to stdout
+        datas = json.dumps(data, sort_keys=True, ensure_ascii=False, indent=2)
+        datab = datas.encode()
+        sys.stdout.buffer.write(datab)
+
     logging.info("OK")
 
 
@@ -243,7 +251,7 @@ def set_metadata(ctx, table, metadata_file, encoding):
 @click.argument("test_schema", default="sandbox")
 def test_roundtrip(ctx, test_schema):
     client = ctx.obj["client"]
-    roundtrip(client, schema=test_schema)
+    TestRoundtrip().test_roundtrip(client=client, schema=test_schema)
     logging.info("OK")
 
 

@@ -218,7 +218,7 @@ class OepClient:
         return self._request("DELETE", url, 200)
 
     @check_exception("not found", OepTableNotFoundException)
-    def select_from_table(self, table, schema=None):
+    def select_from_table(self, table, schema=None, where=None):
         """Select all rows from table.
 
         Args:
@@ -226,11 +226,19 @@ class OepClient:
                 all lowercase, only letters, numbers and underscore
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
+            where(list, optional): filter criteria in form of field/operator/value,
+                e.g. ["id>10"]
 
         Returns:
             list of records(dict: column_name -> value)
         """
         url = self._get_table_url(table=table, schema=schema) + "rows/"
+
+        if where:
+            # convert dict into url
+            where = "&".join(f"where={w}" for w in where)
+            url = f"{url}?{where}"
+
         res = self._request("GET", url, 200)
         return res
 

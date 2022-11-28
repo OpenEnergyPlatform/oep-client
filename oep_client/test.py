@@ -1,4 +1,5 @@
 # coding: utf-8
+import json
 import logging
 import os
 import random
@@ -24,34 +25,6 @@ TEST_TABLE_DEFINITION = {
         {"name": "field2", "data_type": "integer", "is_nullable": True},
     ]
 }
-TEST_TABLE_DATA = [
-    {"field1": "test öäü 😀", "field2": None},  # some unicode data
-]
-
-
-def roundtrip(client, schema=SCHEMA, n_records=N_RECORDS):
-    """
-    * create table
-    * upload data
-    * download data
-    * delete table
-    """
-    # create a random test table name that does not exist
-    tries_left = MAX_TRIES
-    while tries_left:
-        table_name = "test_table_%s" % random.randint(0, 1000000000)
-        if not client.table_exists(table_name, schema=schema):
-            break
-        if not tries_left:
-            raise Exception(
-                "Could not create a random test table name after %d tries" % MAX_TRIES
-            )
-    test_data = TEST_TABLE_DATA * n_records
-    client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
-    client.insert_into_table(table_name, test_data, schema=schema)
-    data = client.select_from_table(table_name, schema=schema)
-    client.drop_table(table_name, schema=schema)
-    return data
 
 
 class TestRoundtrip(unittest.TestCase):
@@ -70,7 +43,49 @@ class TestRoundtrip(unittest.TestCase):
 
         cls.client = OepClient(token=token)
 
-    def test_roundtrip(self):
-        data = roundtrip(self.client)
-        logging.info(data)
-        self.assertEqual(data, TEST_TABLE_DATA)
+    def test_roundtrip(self, client=None, schema=None):
+        """
+        * create table
+        * upload data
+        * download data
+        * delete table
+        """
+
+        client = client or self.client
+        schema = schema or SCHEMA
+
+        # generate test data
+        test_data = [{"field1": "test öäü 😀", "field2": i} for i in range(N_RECORDS)]
+
+        # create a random test table name that does not exist
+        tries_left = MAX_TRIES
+        while tries_left:
+            table_name = "test_table_%s" % random.randint(0, 1000000000)
+            if not client.table_exists(table_name, schema=schema):
+                break
+            if not tries_left:
+                raise Exception(
+                    "Could not create a random test table name after %d tries"
+                    % MAX_TRIES
+                )
+        client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
+        client.insert_into_table(table_name, test_data, schema=schema)
+        data = client.select_from_table(table_name, schema=schema)
+
+        # also test where
+        data_partial = client.select_from_table(
+            table_name, schema=schema, where=["field2>0", "field2<2"]
+        )
+        self.assertEqual(len(data_partial), 1)
+        self.assertEqual(data_partial[0]["field2"], 1)
+
+        client.drop_table(table_name, schema=schema)
+
+        # remove generated id columns
+        for row in data:
+            del row["id"]
+
+        # test equality
+        self.assertEqual(
+            json.dumps(test_data, sort_keys=True), json.dumps(data, sort_keys=True)
+        )
