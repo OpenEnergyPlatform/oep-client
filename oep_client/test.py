@@ -17,12 +17,18 @@ TEST_TABLE_DEFINITION = {
     "columns": [
         {
             "name": "id",
+            "type": "integer",
             "data_type": "bigserial",
             "is_nullable": False,
             "primary_key": True,
         },
-        {"name": "field1", "data_type": "varchar(128)", "is_nullable": False},
-        {"name": "field2", "data_type": "integer", "is_nullable": True},
+        {
+            "name": "field1",
+            "type": "string",
+            "data_type": "varchar(128)",
+            "is_nullable": False,
+        },
+        {"name": "field2", "type": "integer", "is_nullable": True},
     ]
 }
 

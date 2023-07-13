@@ -29,6 +29,7 @@ import json
 import logging
 import math
 import re
+from copy import deepcopy
 
 import click
 import requests
@@ -52,6 +53,7 @@ DEFAULT_INSERT_RETRIES = 10
 
 
 def fix_table_definition(definition):
+    definition = deepcopy(definition)
     if "fields" in definition:
         definition["columns"] = definition.pop("fields")
     definition["columns"] = [fix_column_definition(c) for c in definition["columns"]]
@@ -59,8 +61,8 @@ def fix_table_definition(definition):
 
 
 def fix_column_definition(definition):
-    if "type" in definition:
-        definition["data_type"] = definition.pop("type")
+    definition = deepcopy(definition)
+    definition["data_type"] = definition.get("data_type") or definition.pop("type")
     return definition
 
 
