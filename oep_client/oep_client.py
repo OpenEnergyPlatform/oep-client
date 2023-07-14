@@ -35,7 +35,8 @@ import click
 import requests
 
 from .advanced_api import AdvancedApiSession
-from .dialect import get_sqlalchemy_table
+
+# from .dialect import get_sqlalchemy_table
 from .exceptions import (
     OepAuthenticationException,
     OepClientSideException,
@@ -50,6 +51,7 @@ DEFAULT_API_VERSION = "v0"
 DEFAULT_SCHEMA = "model_draft"
 DEFAULT_BATCH_SIZE = 5000
 DEFAULT_INSERT_RETRIES = 10
+TOKEN_ENV_VAR = "OEP_API_TOKEN"
 
 
 def fix_table_definition(definition):
@@ -277,9 +279,11 @@ class OepClient:
 
         batch_size = batch_size or self.batch_size
         n_batches = math.ceil(len(data) / batch_size)
-        data_batches = [
-            data[i * batch_size : (i + 1) * batch_size] for i in range(n_batches)
-        ]
+        data_batches = []
+        for i in range(n_batches):
+            i_from = i * batch_size
+            i_to = (i + 1) * batch_size
+            data_batches.append(data[i_from:i_to])
 
         n_items = 0
         with click.progressbar(data_batches) as data_parts:
@@ -536,8 +540,8 @@ class OepClient:
         )
         return self._request("POST", url, 200)
 
-    def get_sqlalchemy_table(self, table, schema=None):
-        return get_sqlalchemy_table(self, table, schema=schema)
+    # def get_sqlalchemy_table(self, table, schema=None):
+    #    return get_sqlalchemy_table(self, table, schema=schema)
 
     def delete_from_table(self, table, schema=None):
         """Delete all rows from table (without dropping it).

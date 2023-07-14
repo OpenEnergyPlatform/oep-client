@@ -1,14 +1,18 @@
 """Command line script for OepClient
 """
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 import json
 import logging
+import os
 import re
 import sys
+from tempfile import NamedTemporaryFile
+from urllib.parse import urlsplit
 
 import click
 import pandas as pd
+import requests
 from numpy import nan
 
 from oep_client.exceptions import OepApiException, OepClientSideException
@@ -19,6 +23,7 @@ from oep_client.oep_client import (
     DEFAULT_INSERT_RETRIES,
     DEFAULT_PROTOCOL,
     DEFAULT_SCHEMA,
+    TOKEN_ENV_VAR,
     OepClient,
     fix_table_definition,
 )
@@ -32,6 +37,9 @@ DEFAULT_INDENT = 2
 
 
 def read_json(filepath, encoding):
+
+    filepath = make_local(filepath)
+
     with open(filepath, encoding=encoding) as file:
         return json.load(file)
 
@@ -73,7 +81,24 @@ def records_to_dataframe(records):
     return df
 
 
+def make_local(filepath_or_url: str) -> str:
+    # if filepath is url: download to tempfile
+    if not re.match("^http[s]?://", filepath_or_url):
+        return filepath_or_url
+    suffix = urlsplit(filepath_or_url).path.split("/")[-1]
+    suffix = re.sub("[^a-z0-9.]", "_", suffix.lower())  # replace non word chars
+    with NamedTemporaryFile(mode="wb", delete=False, suffix="_" + suffix) as file:
+        logging.debug(f"Downloading {filepath_or_url} => {file.name}")
+        resp = requests.get(filepath_or_url)
+        resp.raise_for_status()
+        file.write(resp.content)
+        return file.name
+
+
 def read_dataframe(filepath, **kwargs):
+
+    filepath = make_local(filepath)
+
     if filepath.endswith(".json"):
         df = pd.read_json(filepath)
     elif filepath.endswith(".csv"):
@@ -81,9 +106,8 @@ def read_dataframe(filepath, **kwargs):
             filepath, encoding=kwargs.get("encoding"), sep=kwargs.get("delimiter")
         )
     elif filepath.endswith(".xlsx"):
-        sheet = kwargs.get("sheet")
-        if not sheet:
-            raise OepClientSideException("Must specify sheet when reading excel files")
+        # pd.read_excel default for sheet_name = 0 (first sheet)
+        sheet = kwargs.get("sheet", 0)
         df = pd.read_excel(filepath, sheet)
     else:
         raise OepClientSideException("Unsupported filetype: %s" % filepath)
@@ -144,6 +168,9 @@ def main(
     loglevel = getattr(logging, loglevel.upper())
     logging.basicConfig(format=LOGGING_FMT, datefmt=LOGGING_DATE_FMT, level=loglevel)
     ctx.ensure_object(dict)
+
+    token = token or os.environ.get(TOKEN_ENV_VAR)
+
     ctx.obj["client"] = OepClient(
         token=token,
         protocol=protocol,
@@ -158,17 +185,18 @@ def main(
 @main.command("create")
 @click.pass_context
 @click.argument("table")
-@click.argument("metadata_file", type=click.Path(exists=True))
+@click.argument("metadata_file", type=click.Path())
 @click.option("--encoding", "-e", default=DEFAULT_ENCODING)
-def create_table(ctx, table, metadata_file, encoding):
+@click.option("--upload-metadata", "-m", is_flag=True)
+def create_table(ctx, table, metadata_file, encoding, upload_metadata):
     metadata = read_metadata_json(metadata_file, encoding)
     definition = get_schema_definition_from_metadata(metadata)
     client = ctx.obj["client"]
     client.create_table(table, definition)
-    # automatically upload metadata?
-    # client.set_metadata(table, metadata)
-
-    # logging.info("OK")
+    # automatically upload metadata
+    if upload_metadata:
+        client.set_metadata(table, metadata)
+    logging.info("OK")
 
 
 @main.command("drop")
@@ -183,7 +211,7 @@ def drop_table(ctx, table):
 @main.command("insert")
 @click.pass_context
 @click.argument("table")
-@click.argument("data_file", type=click.Path(exists=True))
+@click.argument("data_file", type=click.Path())
 @click.option("--encoding", "-e", default=DEFAULT_ENCODING)
 @click.option("--sheet", "-s", default=None)
 @click.option("--delimiter", "-d", default=",")
@@ -210,7 +238,7 @@ def select_from_table(ctx, table, data_file, where, sheet, delimiter):
         write_dataframe(df, data_file, sheet=sheet, delimiter=delimiter)
     else:
         # print to stdout
-        datas = json.dumps(data, sort_keys=True, ensure_ascii=False, indent=2)
+        datas = json.dumps(data, ensure_ascii=False, indent=2)
         datab = datas.encode()
         sys.stdout.buffer.write(datab)
 
@@ -225,12 +253,20 @@ def metadata():
 @metadata.command("get")
 @click.pass_context
 @click.argument("table")
-@click.argument("metadata_file", type=click.Path(exists=False))
+@click.argument("metadata_file", type=click.Path(exists=False), required=False)
 @click.option("--encoding", "-e", default=DEFAULT_ENCODING)
 def get_metadata(ctx, table, metadata_file, encoding):
     client = ctx.obj["client"]
     metadata = client.get_metadata(table)
-    write_json(metadata, metadata_file, encoding=encoding)
+
+    if metadata_file:
+        write_json(metadata, metadata_file, encoding=encoding)
+    else:
+        # print to stdout
+        datas = json.dumps(metadata, ensure_ascii=False, indent=2)
+        datab = datas.encode()
+        sys.stdout.buffer.write(datab)
+
     logging.info("OK")
 
 

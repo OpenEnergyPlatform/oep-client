@@ -1,9 +1,10 @@
 # coding: utf-8
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 
 from .advanced_api import AdvancedApiSession
-from .dialect import get_sqlalchemy_table
+
+# from .dialect import get_sqlalchemy_table
 from .exceptions import (
     OepApiException,
     OepAuthenticationException,
@@ -19,12 +20,13 @@ from .oep_client import (
     DEFAULT_INSERT_RETRIES,
     DEFAULT_PROTOCOL,
     DEFAULT_SCHEMA,
+    TOKEN_ENV_VAR,
     OepClient,
 )
 
 __all__ = [
     "AdvancedApiSession",
-    "get_sqlalchemy_table",
+    # "get_sqlalchemy_table",
     "OepApiException",
     "OepAuthenticationException",
     "OepClientSideException",
@@ -37,5 +39,6 @@ __all__ = [
     "DEFAULT_INSERT_RETRIES",
     "DEFAULT_PROTOCOL",
     "DEFAULT_SCHEMA",
+    "TOKEN_ENV_VAR",
     "OepClient",
 ]

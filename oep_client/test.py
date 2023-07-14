@@ -5,9 +5,8 @@ import os
 import random
 import unittest
 
-from . import OepClient
+from . import TOKEN_ENV_VAR, OepClient
 
-TOKEN_ENV_VAR = "OEP_API_TOKEN"
 SCHEMA = "sandbox"
 MAX_TRIES = 10
 N_RECORDS = 1000
