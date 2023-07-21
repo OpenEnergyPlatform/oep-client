@@ -29,9 +29,9 @@ import json
 import logging
 import math
 import re
-from copy import deepcopy
 
 import click
+import pandas as pd
 import requests
 
 from .advanced_api import AdvancedApiSession
@@ -44,6 +44,7 @@ from .exceptions import (
     OepTableAlreadyExistsException,
     OepTableNotFoundException,
 )
+from .utils import dataframe_to_records, fix_table_definition
 
 DEFAULT_HOST = "openenergy-platform.org"
 DEFAULT_PROTOCOL = "https"
@@ -52,20 +53,6 @@ DEFAULT_SCHEMA = "model_draft"
 DEFAULT_BATCH_SIZE = 5000
 DEFAULT_INSERT_RETRIES = 10
 TOKEN_ENV_VAR = "OEP_API_TOKEN"
-
-
-def fix_table_definition(definition):
-    definition = deepcopy(definition)
-    if "fields" in definition:
-        definition["columns"] = definition.pop("fields")
-    definition["columns"] = [fix_column_definition(c) for c in definition["columns"]]
-    return definition
-
-
-def fix_column_definition(definition):
-    definition = deepcopy(definition)
-    definition["data_type"] = definition.get("data_type") or definition.pop("type")
-    return definition
 
 
 def check_exception(pattern, exception):
@@ -118,6 +105,7 @@ class OepClient:
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
         self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
+        self.web_url = "%s://%s/dataedit/view/" % (protocol, host)
         self.protocol = protocol
         self.host = host
         self.token = token
@@ -125,7 +113,7 @@ class OepClient:
         self.batch_size = batch_size
         self.insert_retries = insert_retries
 
-    def _get_table_url(self, table, schema=None):
+    def _get_table_api_url(self, table, schema=None):
         """Return base api url for table.
 
         Args:
@@ -136,6 +124,20 @@ class OepClient:
         """
         schema = schema or self.default_schema
         url = self.api_url + "schema/%s/tables/%s/" % (schema, table)
+        logging.debug("URL: %s", url)
+        return url
+
+    def get_web_url(self, table, schema=None):
+        """Return web url for data edit/view
+
+        Args:
+            table(str): table name. Must be valid postgres table name,
+                all lowercase, only letters, numbers and underscore
+            schema(str, optional): table schema name.
+                defaults to self.default_schema which is usually "model_draft"
+        """
+        schema = schema or self.default_schema
+        url = self.web_url + "%s/%s" % (schema, table)
         logging.debug("URL: %s", url)
         return url
 
@@ -201,7 +203,7 @@ class OepClient:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """  # noqa
-        url = self._get_table_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table, schema=schema)
         definition = fix_table_definition(definition)
         logging.debug(definition)
         self._request("PUT", url, 201, {"query": definition})
@@ -221,7 +223,7 @@ class OepClient:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
-        url = self._get_table_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table, schema=schema)
         return self._request("DELETE", url, 200)
 
     @check_exception("not found", OepTableNotFoundException)
@@ -239,7 +241,7 @@ class OepClient:
         Returns:
             list of records(dict: column_name -> value)
         """
-        url = self._get_table_url(table=table, schema=schema) + "rows/"
+        url = self._get_table_api_url(table=table, schema=schema) + "rows/"
 
         if where:
             # convert dict into url
@@ -271,9 +273,14 @@ class OepClient:
 
         table_def = self.get_table_definition(table, schema=schema)
         column_names = [c["name"] for c in table_def["columns"]]
-        used_column_names = set()
-        for row in data:
-            used_column_names = used_column_names | set(row.keys())
+
+        if isinstance(data, pd.DataFrame):
+            used_column_names = set(data.columns)
+            data = dataframe_to_records(data)
+        else:
+            used_column_names = set()
+            for row in data:
+                used_column_names = used_column_names | set(row.keys())
 
         # FIXME: on oep server: columns are determined by keys in first row!
         # for now, we have to fix at least the first row
@@ -346,7 +353,7 @@ class OepClient:
             logging.warning("no data")
             return {}
 
-        url = self._get_table_url(table=table, schema=schema) + "rows/new"
+        url = self._get_table_api_url(table=table, schema=schema) + "rows/new"
         res = self._request("POST", url, 201, {"query": data})
         return res
 
@@ -361,7 +368,7 @@ class OepClient:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
-        url = self._get_table_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table, schema=schema)
         res = self._request("GET", url, 200)
         definition = {
             "columns": [],
@@ -462,7 +469,7 @@ class OepClient:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
-        url = self._get_table_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table, schema=schema)
         self._request("GET", url, 200)
         return True
 
@@ -478,7 +485,7 @@ class OepClient:
         """
         if not self.table_exists(table=table, schema=schema):
             raise OepTableNotFoundException
-        url = self._get_table_url(table=table, schema=schema) + "meta/"
+        url = self._get_table_api_url(table=table, schema=schema) + "meta/"
         res = self._request("GET", url, 200)
         return res
 
@@ -497,7 +504,7 @@ class OepClient:
         """
         if not self.table_exists(table=table, schema=schema):
             raise OepTableNotFoundException
-        url = self._get_table_url(table=table, schema=schema) + "meta/"
+        url = self._get_table_api_url(table=table, schema=schema) + "meta/"
         metadata = self.validate_metadata(table, metadata)
         self._request("POST", url, 200, metadata)
         return self.get_metadata(table=table, schema=schema)
@@ -547,7 +554,8 @@ class OepClient:
     def move_table(self, table, target_schema, schema=None):
         """Move table into new target schema"""
         url = (
-            self._get_table_url(table=table, schema=schema) + "move/%s/" % target_schema
+            self._get_table_api_url(table=table, schema=schema)
+            + "move/%s/" % target_schema
         )
         return self._request("POST", url, 200)
 

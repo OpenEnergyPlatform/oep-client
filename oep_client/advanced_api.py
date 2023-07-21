@@ -1,6 +1,9 @@
 import logging
 
+import pandas as pd
+
 from .exceptions import OepClientSideException
+from .utils import dataframe_to_records
 
 
 class AdvancedApiSession:
@@ -69,6 +72,8 @@ class AdvancedApiSession:
             schema(str, optional): table schema name.
                 defaults to self.default_schema which is usually "model_draft"
         """
+        if isinstance(data, pd.DataFrame):
+            data = dataframe_to_records(data)
 
         if not isinstance(data, (list, tuple)) or (
             data and not isinstance(data[0], dict)
