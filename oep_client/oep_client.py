@@ -204,7 +204,10 @@ class OepClient:
         url = self._get_table_url(table=table, schema=schema)
         definition = fix_table_definition(definition)
         logging.debug(definition)
-        return self._request("PUT", url, 201, {"query": definition})
+        self._request("PUT", url, 201, {"query": definition})
+        # to check: return schema of newlycreated table
+        definition_final = self.get_table_definition(table=table, schema=schema)
+        logging.debug(definition_final)
 
     # inconsistent message from server:
     # "do not have permission" when table does not exist
@@ -271,6 +274,13 @@ class OepClient:
         used_column_names = set()
         for row in data:
             used_column_names = used_column_names | set(row.keys())
+
+        # FIXME: on oep server: columns are determined by keys in first row!
+        # for now, we have to fix at least the first row
+        if data and set(data[0]) < used_column_names:
+            for c in used_column_names - set(data[0]):
+                data[0][c] = None
+
         unknown_column_names = used_column_names - set(column_names)
         if unknown_column_names:
             raise OepClientSideException(
@@ -319,7 +329,7 @@ class OepClient:
 
                 n_items += len(data_part)
 
-        # todo: return info to user?
+        return self.count_rows(table=table, schema=schema)
 
     def _insert_into_table_api(self, table, data, schema):
         """Insert records into table.
