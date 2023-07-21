@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.14.1"
+__version__ = "0.15.0"
 
 import json
 import logging
@@ -317,6 +317,14 @@ def delete(ctx, table):
     client = ctx.obj["client"]
     client.delete_from_table(table)
     logging.info("OK")
+
+
+@main.command("list")
+@click.pass_context
+def iter_tables(ctx):
+    client = ctx.obj["client"]
+    for item in client.iter_tables():
+        print("%(schema)s.%(table)s" % item)
 
 
 if __name__ == "__main__":

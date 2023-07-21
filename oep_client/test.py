@@ -32,6 +32,10 @@ TEST_TABLE_DEFINITION = {
     "constraints": [{"constraint_type": "UNIQUE", "columns": ["field1"]}],
 }
 
+logging.basicConfig(
+    format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.INFO
+)
+
 
 class TestRoundtrip(unittest.TestCase):
     @classmethod
@@ -42,10 +46,6 @@ class TestRoundtrip(unittest.TestCase):
                 "In order to run the test, you must set the environment variable %s"
                 % TOKEN_ENV_VAR
             )
-
-        logging.basicConfig(
-            format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.DEBUG
-        )
 
         cls.client = OepClient(token=token)
 
@@ -111,3 +111,16 @@ class TestRoundtrip(unittest.TestCase):
         self.assertEqual(data_partial[0]["field2"], 2)
 
         client.drop_table(table_name, schema=schema)
+
+
+class TestUtils(unittest.TestCase):
+    """functions without token auth"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.client = OepClient()
+
+    def test_iter_tables(self):
+        self.assertTrue(
+            all(set(["schema", "table"]) == set(x) for x in self.client.iter_tables())
+        )

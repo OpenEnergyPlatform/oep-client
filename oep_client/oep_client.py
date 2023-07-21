@@ -322,7 +322,8 @@ class OepClient:
                         break
                     except OepServerSideException:
                         if try_number <= self.insert_retries:
-                            logging.warning("A server side error occurred. retrying...")
+                            # FIXME ???
+                            logging.debug("A server side error occurred. retrying...")
 
                 if not success:
                     raise OepServerSideException()
@@ -565,3 +566,23 @@ class OepClient:
         """
         with self.advanced_session() as sas:
             sas.delete_from_table(table, schema=schema)
+
+    def iter_tables(self):
+        adv = AdvancedApiSession(self)  # no need to enter context
+        url = adv.api_url + "get_schema_names"
+        schemas = self._request("post", url, expected_status=200)["content"]
+        url = adv.api_url + "get_table_names"
+
+        for schema in schemas:
+            if schema.startswith("_") or schema in [
+                "topology",
+                "test",
+                "sandbox",
+                "information_schema",
+            ]:
+                continue
+            tables = self._request(
+                "post", url, jsondata={"query": {"schema": schema}}, expected_status=200
+            )["content"]
+            for table in tables:
+                yield {"schema": schema, "table": table}
