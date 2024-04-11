@@ -1,6 +1,6 @@
 """Command line script for OepClient
 """
-__version__ = "0.11.0"
+__version__ = "0.11.1"
 
 import json
 import logging
