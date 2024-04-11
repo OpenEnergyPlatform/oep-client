@@ -43,7 +43,7 @@ from .exceptions import (
     OepTableNotFoundException,
 )
 
-DEFAULT_HOST = "openenergy-platform.org"
+DEFAULT_HOST = "openenergyplatform.org"
 DEFAULT_PROTOCOL = "https"
 DEFAULT_API_VERSION = "v0"
 DEFAULT_SCHEMA = "model_draft"
@@ -102,7 +102,7 @@ class OepClient:
             host(str, optional): default is "https". "http" may be used for
               local installations
             host(str, optional): host of the oep platform.
-              default is "openenergy-platform.org"
+              default is "openenergyplatform.org"
             api_version(str, optional): currently only "v0"
             default_schema(str, optional): the default schema for the tables,
               usually "model_draft"

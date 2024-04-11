@@ -25,7 +25,7 @@ python3 -m pip install --upgrade oep-client
 
 ## Authentification
 
-You need to be [registered on the OEP platform](https://openenergy-platform.org/user/register) and have a valid API token.
+You need to be [registered on the OEP platform](https://openenergyplatform.org/user/register) and have a valid API token.
 You can find your token in your user profile on the OEP under _Your Security Information_.
 
 ## Test
@@ -115,7 +115,7 @@ oep-client -t OEP_API_TOKEN metadata set TABLE_NAME metadata.json
 
 ## Downloading data
 
-Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).
+Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergyplatform.org/dataedit/schemas).
 
 ```bash
 oep-client -t OEP_API_TOKEN select TABLE_NAME FILENAME
@@ -128,7 +128,7 @@ if `FILENAME` is a
 
 ## Retrieving a table's metadata
 
-Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergy-platform.org/dataedit/schemas).
+Note: you do not need an API_TOKEN to downlad metadata. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergyplatform.org/dataedit/schemas).
 
 ```bash
 oep-client -t OEP_API_TOKEN metadata get TABLE_NAME FILENAME
@@ -153,7 +153,7 @@ cl = OepClient(token='API_TOKEN', ...)
 
 # More Information - Use the API without the oep-client
 
-This section describes how to upload data to the [OEP](https://openenergy-platform.org "OEP") using Python and the REST-API.
+This section describes how to upload data to the [OEP](https://openenergyplatform.org "OEP") using Python and the REST-API.
 
 ## Create and upload data table(s)
 
@@ -168,7 +168,7 @@ This section describes how to upload data to the [OEP](https://openenergy-platfo
 
 ```
 import requests
-API_URL = 'https://openenergy-platform.org/api/v0'
+API_URL = 'https://openenergyplatform.org/api/v0'
 session = requests.Session()
 session.headers = {'Authorization': 'Token %s' % API_TOKEN}
 ```
@@ -181,7 +181,7 @@ session.headers = {'Authorization': 'Token %s' % API_TOKEN}
 
 ### Create a new table
 
-- You will create the tables at first in the [_model_draft_](https://openenergy-platform.org/dataedit/view/model_draft) schema. After a successful review later, the table will be moved to the final target schema.
+- You will create the tables at first in the [_model_draft_](https://openenergyplatform.org/dataedit/view/model_draft) schema. After a successful review later, the table will be moved to the final target schema.
 
 - You need to specify the name of the new table (`TABLE_NAME`), which should be a valid
   post-gresql table name, without spaces, ideally only containing lower case letters, numbers and underscores.
