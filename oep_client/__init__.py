@@ -1,5 +1,5 @@
 # coding: utf-8
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 
 from .advanced_api import AdvancedApiSession
