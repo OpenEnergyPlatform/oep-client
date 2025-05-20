@@ -161,7 +161,7 @@ class OepClient:
         logging.debug("%d %s %s", res.status_code, method, url)
         try:
             res_json = res.json()
-        except json.decoder.JSONDecodeError:
+        except Exception:
             # api should return json, but some actions don't,
             # and 500 errors obviously also don't
             res_json = {}
