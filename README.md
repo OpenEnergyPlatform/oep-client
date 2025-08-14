@@ -41,7 +41,7 @@ oep-client -t OEP_API_TOKEN test
 
 ## Notes on Data and Metadata
 
-Supported filetypes that the client can work with are are: xslx, csv, json.
+Supported filetypes that the client can work with are: xslx, csv, json.
 Your metadata must be a json file that complies with the [metadata specification of the OEP](https://github.com/OpenEnergyPlatform/metadata).
 
 ## Notes on Usage
@@ -49,7 +49,7 @@ Your metadata must be a json file that complies with the [metadata specification
 All tasks can be executed either directly as a comand line script (CLI) `oep-client` that comes with this package, or in a python environment.
 
 The CLI is very handy for standardized tasks as it requires just one command line, but is somewhat limited when for instance your input data is not in a very specific format.
-To see avaiblabe command line options, use
+To see available command line options, use
 
 ```
 oep-client --help
@@ -115,7 +115,7 @@ oep-client -t OEP_API_TOKEN metadata set TABLE_NAME metadata.json
 
 ## Downloading data
 
-Note: you do not need an API_TOKEN to downlad data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergyplatform.org/dataedit/schemas).
+Note: you do not need an API_TOKEN to download data. Also, the table might not be in the `model_draft` schema, in which case you can specify the table name as `schema_name.table_name`. -> [List of schemas](https://openenergyplatform.org/dataedit/schemas).
 
 ```bash
 oep-client -t OEP_API_TOKEN select TABLE_NAME FILENAME
