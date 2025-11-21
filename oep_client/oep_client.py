@@ -25,7 +25,6 @@ cli.drop_table(table)
 """  # noqa
 
 import functools
-import json
 import logging
 import math
 import re
@@ -55,7 +54,7 @@ DEFAULT_INSERT_RETRIES = 10
 TOKEN_ENV_VAR = "OEP_API_TOKEN"
 
 
-def check_exception(pattern, exception):
+def check_exception(pattern: str, exception):
     """create decorator for custom Exceptions."""
 
     def decorator(fun):
@@ -142,7 +141,9 @@ class OepClient:
         return url
 
     @check_exception("invalid token", OepAuthenticationException)
-    def _request(self, method, url, expected_status, jsondata=None):
+    def _request(
+        self, method, url, expected_status, jsondata=None, params: dict | None = None
+    ):
         """Send a request and perform basic check for results
 
         Args:
@@ -156,7 +157,7 @@ class OepClient:
             result object from returned json data
         """
         res = requests.request(
-            url=url, method=method, json=jsondata, headers=self.headers
+            url=url, method=method, json=jsondata, headers=self.headers, params=params
         )
         logging.debug("%d %s %s", res.status_code, method, url)
         try:
@@ -176,7 +177,7 @@ class OepClient:
         return res_json
 
     @check_exception("exists", OepTableAlreadyExistsException)
-    def create_table(self, table, definition, schema=None):
+    def create_table(self, table, definition, schema=None, is_sandbox: bool = False):
         """Create table.
 
         Args:
@@ -206,7 +207,14 @@ class OepClient:
         url = self._get_table_api_url(table=table, schema=schema)
         definition = fix_table_definition(definition)
         logging.debug(definition)
-        self._request("PUT", url, 201, {"query": definition})
+        if is_sandbox:
+            # NOTE: do NOT send {"is_sandbox": False}, API checks only if
+            # query param is_sandbox is set
+            params = {"is_sandbox": True}
+        else:
+            params = {}
+
+        self._request("PUT", url, 201, {"query": definition}, params=params)
         # to check: return schema of newlycreated table
         definition_final = self.get_table_definition(table=table, schema=schema)
         logging.debug(definition_final)
@@ -458,7 +466,7 @@ class OepClient:
         except OepTableNotFoundException:
             return False
 
-    @check_exception("not found", OepTableNotFoundException)
+    @check_exception("", OepTableNotFoundException)
     def _table_exists(self, table, schema=None):
         """True or False
 

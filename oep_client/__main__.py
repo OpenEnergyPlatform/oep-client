@@ -88,11 +88,14 @@ def main(
 @click.argument("metadata_file", type=click.Path())
 @click.option("--encoding", "-e", default=DEFAULT_ENCODING)
 @click.option("--upload-metadata", "-m", is_flag=True)
-def create_table(ctx, table, metadata_file, encoding, upload_metadata):
+@click.option("--is-sandbox", is_flag=True)
+def create_table(
+    ctx, table, metadata_file, encoding, upload_metadata, is_sandbox: bool = False
+):
     metadata = read_metadata_json(metadata_file, encoding)
     definition = get_schema_definition_from_metadata(metadata)
     client = ctx.obj["client"]
-    client.create_table(table, definition)
+    client.create_table(table, definition, is_sandbox=is_sandbox)
     # automatically upload metadata
     if upload_metadata:
         client.set_metadata(table, metadata)

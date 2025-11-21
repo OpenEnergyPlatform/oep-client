@@ -32,10 +32,6 @@ TEST_TABLE_DEFINITION = {
     "constraints": [{"constraint_type": "UNIQUE", "columns": ["field1"]}],
 }
 
-logging.basicConfig(
-    format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.INFO
-)
-
 
 class TestRoundtrip(unittest.TestCase):
     @classmethod
@@ -79,8 +75,12 @@ class TestRoundtrip(unittest.TestCase):
                     "Could not create a random test table name after %d tries"
                     % MAX_TRIES_FIND_RANDOM_TEST_TABLE
                 )
-        tdef = client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
+
+        tdef = client.create_table(
+            table_name, TEST_TABLE_DEFINITION, schema=schema, is_sandbox=True
+        )
         logging.info(tdef)
+
         rcount = client.insert_into_table(table_name, test_data, schema=schema)
 
         # insert second time should fail because unique constraint
