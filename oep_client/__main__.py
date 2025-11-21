@@ -8,6 +8,7 @@ import os
 import sys
 
 import click
+
 from oep_client.exceptions import OepApiException
 from oep_client.oep_client import (
     DEFAULT_API_VERSION,
@@ -181,10 +182,9 @@ def set_metadata(ctx, table, metadata_file, encoding):
 
 @main.command("test")
 @click.pass_context
-@click.argument("test_schema", default="sandbox")
-def test_roundtrip(ctx, test_schema):
+def test_roundtrip(ctx):
     client = ctx.obj["client"]
-    TestRoundtrip().test_roundtrip(client=client, schema=test_schema)
+    TestRoundtrip().test_roundtrip(client=client)
     logging.info("OK")
 
 
@@ -221,7 +221,7 @@ def delete(ctx, table):
 def iter_tables(ctx):
     client = ctx.obj["client"]
     for item in client.iter_tables():
-        print("%(schema)s.%(table)s" % item)
+        print("%(table)s" % item)
 
 
 if __name__ == "__main__":

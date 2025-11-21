@@ -566,4 +566,4 @@ class OepClient:
                 "post", url, jsondata={"query": {"schema": schema}}, expected_status=200
             )["content"]
             for table in tables:
-                yield {"schema": schema, "table": table}
+                yield {"table": table}

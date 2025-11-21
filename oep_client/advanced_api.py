@@ -58,7 +58,7 @@ class AdvancedApiSession:
             self.connection_id = None
 
     def _get_query(self, table, schema=None, **kwargs):
-        query = {"schema": schema, "table": table}
+        query = {"table": table}
         query.update(kwargs)
         return query
 
