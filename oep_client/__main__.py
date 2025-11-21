@@ -1,5 +1,4 @@
-"""Command line script for OepClient
-"""
+"""Command line script for OepClient"""
 
 __version__ = "0.17.1"
 
@@ -9,7 +8,6 @@ import os
 import sys
 
 import click
-
 from oep_client.exceptions import OepApiException
 from oep_client.oep_client import (
     DEFAULT_API_VERSION,
@@ -17,7 +15,6 @@ from oep_client.oep_client import (
     DEFAULT_HOST,
     DEFAULT_INSERT_RETRIES,
     DEFAULT_PROTOCOL,
-    DEFAULT_SCHEMA,
     TOKEN_ENV_VAR,
     OepClient,
 )
@@ -51,7 +48,6 @@ DEFAULT_ENCODING = "utf-8"
 @click.option("--protocol", default=DEFAULT_PROTOCOL)
 @click.option("--host", default=DEFAULT_HOST)
 @click.option("--api-version", default=DEFAULT_API_VERSION)
-@click.option("--schema", "-s", default=DEFAULT_SCHEMA)
 @click.option("--batch-size", "-b", default=DEFAULT_BATCH_SIZE)
 @click.option("--insert-retries", default=DEFAULT_INSERT_RETRIES)
 def main(
@@ -61,7 +57,6 @@ def main(
     protocol,
     host,
     api_version,
-    schema,
     batch_size,
     insert_retries,
 ):
@@ -76,7 +71,6 @@ def main(
         protocol=protocol,
         host=host,
         api_version=api_version,
-        default_schema=schema,
         batch_size=batch_size,
         insert_retries=insert_retries,
     )

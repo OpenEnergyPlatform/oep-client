@@ -19,7 +19,6 @@ from .oep_client import (
     DEFAULT_HOST,
     DEFAULT_INSERT_RETRIES,
     DEFAULT_PROTOCOL,
-    DEFAULT_SCHEMA,
     TOKEN_ENV_VAR,
     OepClient,
 )
@@ -38,7 +37,6 @@ __all__ = [
     "DEFAULT_HOST",
     "DEFAULT_INSERT_RETRIES",
     "DEFAULT_PROTOCOL",
-    "DEFAULT_SCHEMA",
     "TOKEN_ENV_VAR",
     "OepClient",
 ]

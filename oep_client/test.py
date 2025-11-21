@@ -8,7 +8,6 @@ import unittest
 from . import TOKEN_ENV_VAR, OepClient
 from .exceptions import OepClientSideException
 
-SCHEMA = "sandbox"
 MAX_TRIES_FIND_RANDOM_TEST_TABLE = 10
 
 
@@ -54,7 +53,6 @@ class TestRoundtrip(unittest.TestCase):
         """
 
         client = client or self.client
-        schema = schema or SCHEMA
 
         # generate test data
         test_data = [

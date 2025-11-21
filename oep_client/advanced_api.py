@@ -58,7 +58,7 @@ class AdvancedApiSession:
             self.connection_id = None
 
     def _get_query(self, table, schema=None, **kwargs):
-        query = {"schema": schema or self.oepclient.default_schema, "table": table}
+        query = {"schema": schema, "table": table}
         query.update(kwargs)
         return query
 
@@ -69,8 +69,6 @@ class AdvancedApiSession:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
             data(list): list of records(dict: column_name -> value)
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         if isinstance(data, pd.DataFrame):
             data = dataframe_to_records(data)
@@ -91,8 +89,6 @@ class AdvancedApiSession:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
 
         Returns:
             list of records(dict: column_name -> value)
@@ -108,9 +104,6 @@ class AdvancedApiSession:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
-
         """
 
         query = self._get_query(table, schema=schema)

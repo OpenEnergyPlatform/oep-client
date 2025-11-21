@@ -1,5 +1,4 @@
-"""Work in Progress - requires sqlalchemy and oedialect
-"""
+"""Work in Progress - requires sqlalchemy and oedialect"""
 
 import os
 
@@ -25,7 +24,6 @@ def get_sqlalchemy_table(oepclient, table, schema=None):
 
     engine = sa.create_engine(connection_string)
     metadata = sa.MetaData(bind=engine)
-    schema = schema or oepclient.default_schema
 
     parts = []
     for col in oepclient.get_table_definition(table, schema=schema)["columns"]:

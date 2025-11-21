@@ -48,7 +48,6 @@ from .utils import dataframe_to_records, fix_table_definition
 DEFAULT_HOST = "openenergyplatform.org"
 DEFAULT_PROTOCOL = "https"
 DEFAULT_API_VERSION = "v0"
-DEFAULT_SCHEMA = "model_draft"
 DEFAULT_BATCH_SIZE = 5000
 DEFAULT_INSERT_RETRIES = 10
 TOKEN_ENV_VAR = "OEP_API_TOKEN"
@@ -82,7 +81,6 @@ class OepClient:
         protocol=DEFAULT_PROTOCOL,
         host=DEFAULT_HOST,
         api_version=DEFAULT_API_VERSION,
-        default_schema=DEFAULT_SCHEMA,
         batch_size=DEFAULT_BATCH_SIZE,
         insert_retries=DEFAULT_INSERT_RETRIES,
     ):
@@ -94,8 +92,6 @@ class OepClient:
             host(str, optional): host of the oep platform.
               default is "openenergyplatform.org"
             api_version(str, optional): currently only "v0"
-            default_schema(str, optional): the default schema for the tables,
-              usually "model_draft"
             batch_size(int, optional): number of records that will be uploaded
               per batch.
                if 0 or None: do not use batches
@@ -108,7 +104,6 @@ class OepClient:
         self.protocol = protocol
         self.host = host
         self.token = token
-        self.default_schema = default_schema
         self.batch_size = batch_size
         self.insert_retries = insert_retries
 
@@ -118,10 +113,7 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
-        schema = schema or self.default_schema
         url = self.api_url + "schema/%s/tables/%s/" % (schema, table)
         logging.debug("URL: %s", url)
         return url
@@ -132,10 +124,7 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
-        schema = schema or self.default_schema
         url = self.web_url + "%s/%s" % (schema, table)
         logging.debug("URL: %s", url)
         return url
@@ -201,8 +190,6 @@ class OepClient:
                     ]
                 }
 
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """  # noqa
         url = self._get_table_api_url(table=table, schema=schema)
         definition = fix_table_definition(definition)
@@ -228,8 +215,6 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         url = self._get_table_api_url(table=table, schema=schema)
         return self._request("DELETE", url, 200)
@@ -241,8 +226,6 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
             where(list, optional): filter criteria in form of field/operator/value,
                 e.g. ["id>10"]
 
@@ -271,8 +254,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
             data(list): list of records(dict: column_name -> value)
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
             batch_size(int, optional): defaults to client's default batch size
             method(list, optional):
                 * 'api': sent records via regular API
@@ -354,8 +335,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
             data(list): list of records(dict: column_name -> value)
-            schema(str): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         if not data:
             logging.warning("no data")
@@ -373,8 +352,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
 
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         url = self._get_table_api_url(table=table, schema=schema)
         res = self._request("GET", url, 200)
@@ -457,8 +434,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
 
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
 
         try:
@@ -474,8 +449,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
 
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         url = self._get_table_api_url(table=table, schema=schema)
         self._request("GET", url, 200)
@@ -488,8 +461,6 @@ class OepClient:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
 
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         if not self.table_exists(table=table, schema=schema):
             raise OepTableNotFoundException
@@ -504,9 +475,6 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
 
             metadata(object): json serializable object that follows the meta data specs
         """
@@ -526,7 +494,6 @@ class OepClient:
         return AdvancedApiSession(self)
 
     def count_rows(self, table, schema=None):
-        schema = schema or self.default_schema
         query = {
             "type": "select",
             "from": [{"type": "table", "schema": schema, "table": table}],
@@ -576,8 +543,6 @@ class OepClient:
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
 
         """
         with self.advanced_session() as sas:
