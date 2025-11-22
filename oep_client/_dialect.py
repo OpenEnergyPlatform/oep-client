@@ -3,14 +3,14 @@
 import os
 
 
-def get_sqlalchemy_table(oepclient, table, schema=None):
+def get_sqlalchemy_table(oepclient, table):
     """
     Args:
 
         oepclient(OEPClient)
     """
     # NOTE: import inside of function because it's not mandatory
-    import sqlalchemy as sa
+    import sqlalchemy as sa  # noqa
 
     os.environ["OEDIALECT_PROTOCOL"] = oepclient.protocol
 
@@ -26,8 +26,8 @@ def get_sqlalchemy_table(oepclient, table, schema=None):
     metadata = sa.MetaData(bind=engine)
 
     parts = []
-    for col in oepclient.get_table_definition(table, schema=schema)["columns"]:
+    for col in oepclient.get_table_definition(table)["columns"]:
         parts.append(sa.Column(col["name"]))
 
-    tab = sa.Table(table, metadata, *parts, schema=schema)
+    tab = sa.Table(table, metadata, *parts)
     return tab

@@ -57,12 +57,12 @@ class AdvancedApiSession:
             logging.debug("Closed connection: %s", self.connection_id)
             self.connection_id = None
 
-    def _get_query(self, table, schema=None, **kwargs):
+    def _get_query(self, table, **kwargs):
         query = {"table": table}
         query.update(kwargs)
         return query
 
-    def insert_into_table(self, table, data, schema=None):
+    def insert_into_table(self, table, data):
         """Insert records into table.
 
         Args:
@@ -80,10 +80,10 @@ class AdvancedApiSession:
                 "data must be list or tuple of record dictionaries"
             )
 
-        query = self._get_query(table, schema=schema, values=data)
+        query = self._get_query(table, values=data)
         return self._command("insert", query)
 
-    def select_from_table(self, table, schema=None):
+    def select_from_table(self, table):
         """Select all rows from table.
 
         Args:
@@ -94,11 +94,11 @@ class AdvancedApiSession:
             list of records(dict: column_name -> value)
         """
 
-        query = self._get_query(table, schema=schema)
+        query = self._get_query(table)
         self._command("search", query)
         return self._command("cursor/fetchall")
 
-    def delete_from_table(self, table, schema=None):
+    def delete_from_table(self, table):
         """Delete all rows from table (without dropping it).
 
         Args:
@@ -106,5 +106,5 @@ class AdvancedApiSession:
                 all lowercase, only letters, numbers and underscore
         """
 
-        query = self._get_query(table, schema=schema)
+        query = self._get_query(table)
         return self._command("delete", query)

@@ -44,7 +44,7 @@ class TestRoundtrip(unittest.TestCase):
 
         cls.client = OepClient(token=token)
 
-    def test_roundtrip(self, client=None, schema=None):
+    def test_roundtrip(self, client=None):
         """
         * create table
         * upload data
@@ -66,7 +66,7 @@ class TestRoundtrip(unittest.TestCase):
         tries_left = MAX_TRIES_FIND_RANDOM_TEST_TABLE
         while tries_left:
             table_name = "test_table_%s" % random.randint(0, 1000000000)
-            if not client.table_exists(table_name, schema=schema):
+            if not client.table_exists(table_name):
                 break
             if not tries_left:
                 raise Exception(
@@ -74,12 +74,10 @@ class TestRoundtrip(unittest.TestCase):
                     % MAX_TRIES_FIND_RANDOM_TEST_TABLE
                 )
 
-        tdef = client.create_table(
-            table_name, TEST_TABLE_DEFINITION, schema=schema, is_sandbox=True
-        )
+        tdef = client.create_table(table_name, TEST_TABLE_DEFINITION, is_sandbox=True)
         logging.info(tdef)
 
-        rcount = client.insert_into_table(table_name, test_data, schema=schema)
+        rcount = client.insert_into_table(table_name, test_data)
 
         # insert second time should fail because unique constraint
         self.assertRaises(
@@ -87,11 +85,10 @@ class TestRoundtrip(unittest.TestCase):
             client.insert_into_table,
             table_name,
             test_data,
-            schema=schema,
         )
 
         self.assertEqual(rcount, len(test_data))
-        data = client.select_from_table(table_name, schema=schema)
+        data = client.select_from_table(table_name)
         # remove generated id columns
         for row in data:
             del row["id"]
@@ -103,12 +100,12 @@ class TestRoundtrip(unittest.TestCase):
 
         # also test where
         data_partial = client.select_from_table(
-            table_name, schema=schema, where=["field2>1", "field2<3"]
+            table_name, where=["field2>1", "field2<3"]
         )
         self.assertEqual(len(data_partial), 1)
         self.assertEqual(data_partial[0]["field2"], 2)
 
-        client.drop_table(table_name, schema=schema)
+        client.drop_table(table_name)
 
 
 class TestUtils(unittest.TestCase):
@@ -120,5 +117,5 @@ class TestUtils(unittest.TestCase):
 
     def test_iter_tables(self):
         self.assertTrue(
-            all(set(["schema", "table"]) == set(x) for x in self.client.iter_tables())
+            all(set(["table"]) == set(x) for x in self.client.iter_tables())
         )

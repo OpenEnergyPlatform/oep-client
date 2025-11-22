@@ -100,32 +100,35 @@ class OepClient:
         """
         self.headers = {"Authorization": "Token %s" % token} if token else {}
         self.api_url = "%s://%s/api/%s/" % (protocol, host, api_version)
-        self.web_url = "%s://%s/dataedit/view/" % (protocol, host)
+        self.web_url = "%s://%s/database/" % (protocol, host)
         self.protocol = protocol
         self.host = host
         self.token = token
         self.batch_size = batch_size
         self.insert_retries = insert_retries
 
-    def _get_table_api_url(self, table, schema=None):
+    def _get_table_api_url(self, table):
         """Return base api url for table.
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
         """
-        url = self.api_url + "schema/%s/tables/%s/" % (schema, table)
+
+        url = self.api_url + "tables/%s/" % table
+        # url = self.api_url + "tables/%s/" % table
+
         logging.debug("URL: %s", url)
         return url
 
-    def get_web_url(self, table, schema=None):
+    def get_web_url(self, table):
         """Return web url for data edit/view
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
         """
-        url = self.web_url + "%s/%s" % (schema, table)
+        url = self.web_url + "tables/%s" % table
         logging.debug("URL: %s", url)
         return url
 
@@ -166,7 +169,7 @@ class OepClient:
         return res_json
 
     @check_exception("exists", OepTableAlreadyExistsException)
-    def create_table(self, table, definition, schema=None, is_sandbox: bool = False):
+    def create_table(self, table, definition, is_sandbox: bool = False):
         """Create table.
 
         Args:
@@ -191,7 +194,7 @@ class OepClient:
                 }
 
         """  # noqa
-        url = self._get_table_api_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table)
         definition = fix_table_definition(definition)
         logging.debug(definition)
         if is_sandbox:
@@ -202,25 +205,24 @@ class OepClient:
             params = {}
 
         self._request("PUT", url, 201, {"query": definition}, params=params)
-        # to check: return schema of newlycreated table
-        definition_final = self.get_table_definition(table=table, schema=schema)
+        definition_final = self.get_table_definition(table=table)
         logging.debug(definition_final)
 
     # inconsistent message from server:
     # "do not have permission" when table does not exist
     @check_exception("do not have permission", OepTableNotFoundException)
-    def drop_table(self, table, schema=None):
+    def drop_table(self, table):
         """Drop table.
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
         """
-        url = self._get_table_api_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table)
         return self._request("DELETE", url, 200)
 
     @check_exception("not found", OepTableNotFoundException)
-    def select_from_table(self, table, schema=None, where=None):
+    def select_from_table(self, table, where=None):
         """Select all rows from table.
 
         Args:
@@ -232,7 +234,7 @@ class OepClient:
         Returns:
             list of records(dict: column_name -> value)
         """
-        url = self._get_table_api_url(table=table, schema=schema) + "rows/"
+        url = self._get_table_api_url(table=table) + "rows/"
 
         if where:
             # convert dict into url
@@ -245,9 +247,7 @@ class OepClient:
     # inconsistent message from server:
     # "do not have permission" when table does not exist
     @check_exception("do not have permission", OepTableNotFoundException)
-    def insert_into_table(
-        self, table, data, schema=None, batch_size=None, method="api"
-    ):
+    def insert_into_table(self, table, data, batch_size=None, method="api"):
         """Insert records into table.
 
         Args:
@@ -260,7 +260,7 @@ class OepClient:
                 * 'advanced' (default): sent records via advanced API
         """
 
-        table_def = self.get_table_definition(table, schema=schema)
+        table_def = self.get_table_definition(table)
         column_names = [c["name"] for c in table_def["columns"]]
 
         if isinstance(data, pd.DataFrame):
@@ -307,10 +307,10 @@ class OepClient:
                     try_number += 1
                     try:
                         if method == "api":
-                            self._insert_into_table_api(table, data_part, schema)
+                            self._insert_into_table_api(table, data_part)
                         elif method == "advanced":
                             with AdvancedApiSession(self) as ses:
-                                ses.insert_into_table(table, data_part, schema)
+                                ses.insert_into_table(table, data_part)
                         else:
                             raise NotImplementedError(method)
                         # batch upload ok
@@ -326,9 +326,9 @@ class OepClient:
 
                 n_items += len(data_part)
 
-        return self.count_rows(table=table, schema=schema)
+        return self.count_rows(table=table)
 
-    def _insert_into_table_api(self, table, data, schema):
+    def _insert_into_table_api(self, table, data):
         """Insert records into table.
 
         Args:
@@ -340,12 +340,12 @@ class OepClient:
             logging.warning("no data")
             return {}
 
-        url = self._get_table_api_url(table=table, schema=schema) + "rows/new"
+        url = self._get_table_api_url(table=table) + "rows/new"
         res = self._request("POST", url, 201, {"query": data})
         return res
 
     @check_exception("not found", OepTableNotFoundException)
-    def get_table_definition(self, table, schema=None):
+    def get_table_definition(self, table):
         """Returns table info
 
         Args:
@@ -353,7 +353,7 @@ class OepClient:
                 all lowercase, only letters, numbers and underscore
 
         """
-        url = self._get_table_api_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table)
         res = self._request("GET", url, 200)
         definition = {
             "columns": [],
@@ -373,13 +373,12 @@ class OepClient:
                 res["columns"][args["field"]]["primary_key"] = True
             elif const_type == "FOREIGN KEY":
                 args = re.match(
-                    r"^FOREIGN KEY \((?P<field>[^)]+)\) REFERENCES (?P<ref_schema>[^.]+)\.(?P<ref_table>[^()]+)\((?P<ref_field>[^)]+)\)$",  # noqa
+                    r"^FOREIGN KEY \((?P<field>[^)]+)\) REFERENCES (?P<ref_table>[^()]+)\((?P<ref_field>[^)]+)\)$",  # noqa
                     const_def,
                 ).groupdict()
                 # NOTE currently only single field PK allowed
                 res["columns"][args["field"]]["foreign_key"] = [
                     {
-                        "schema": args["ref_schema"],
                         "table": args["ref_table"],
                         "column": args["ref_field"],
                     }
@@ -427,7 +426,7 @@ class OepClient:
 
         return definition
 
-    def table_exists(self, table, schema=None):
+    def table_exists(self, table):
         """True or False
 
         Args:
@@ -437,12 +436,12 @@ class OepClient:
         """
 
         try:
-            return self._table_exists(table, schema)
+            return self._table_exists(table)
         except OepTableNotFoundException:
             return False
 
     @check_exception("", OepTableNotFoundException)
-    def _table_exists(self, table, schema=None):
+    def _table_exists(self, table):
         """True or False
 
         Args:
@@ -450,11 +449,11 @@ class OepClient:
                 all lowercase, only letters, numbers and underscore
 
         """
-        url = self._get_table_api_url(table=table, schema=schema)
+        url = self._get_table_api_url(table=table)
         self._request("GET", url, 200)
         return True
 
-    def get_metadata(self, table, schema=None):
+    def get_metadata(self, table):
         """Returns metadata json
 
         Args:
@@ -462,14 +461,14 @@ class OepClient:
                 all lowercase, only letters, numbers and underscore
 
         """
-        if not self.table_exists(table=table, schema=schema):
+        if not self.table_exists(table=table):
             raise OepTableNotFoundException
-        url = self._get_table_api_url(table=table, schema=schema) + "meta/"
+        url = self._get_table_api_url(table=table) + "meta/"
         res = self._request("GET", url, 200)
         return res
 
     @check_exception("not found", OepTableNotFoundException)
-    def set_metadata(self, table, metadata, schema=None):
+    def set_metadata(self, table, metadata):
         """write  metadata json, return accepted data from server
 
         Args:
@@ -478,12 +477,12 @@ class OepClient:
 
             metadata(object): json serializable object that follows the meta data specs
         """
-        if not self.table_exists(table=table, schema=schema):
+        if not self.table_exists(table=table):
             raise OepTableNotFoundException
-        url = self._get_table_api_url(table=table, schema=schema) + "meta/"
+        url = self._get_table_api_url(table=table) + "meta/"
         metadata = self.validate_metadata(table, metadata)
         self._request("POST", url, 200, metadata)
-        return self.get_metadata(table=table, schema=schema)
+        return self.get_metadata(table=table)
 
     def validate_metadata(self, table, data):
         if "id" not in data:
@@ -493,10 +492,10 @@ class OepClient:
     def advanced_session(self):
         return AdvancedApiSession(self)
 
-    def count_rows(self, table, schema=None):
+    def count_rows(self, table):
         query = {
             "type": "select",
-            "from": [{"type": "table", "schema": schema, "table": table}],
+            "from": [{"type": "table", "table": table}],
             "fields": [
                 {
                     "type": "label",
@@ -526,18 +525,12 @@ class OepClient:
             rowcount = rec["rowcount"]
         return rowcount
 
-    def move_table(self, table, target_schema, schema=None):
-        """Move table into new target schema"""
-        url = (
-            self._get_table_api_url(table=table, schema=schema)
-            + "move/%s/" % target_schema
-        )
+    def move_table(self, table, topic):
+        """Publish table into topic"""
+        url = self._get_table_api_url(table=table) + "move_publish/%s/" % topic
         return self._request("POST", url, 200)
 
-    # def get_sqlalchemy_table(self, table, schema=None):
-    #    return get_sqlalchemy_table(self, table, schema=schema)
-
-    def delete_from_table(self, table, schema=None):
+    def delete_from_table(self, table):
         """Delete all rows from table (without dropping it).
 
         Args:
@@ -546,24 +539,14 @@ class OepClient:
 
         """
         with self.advanced_session() as sas:
-            sas.delete_from_table(table, schema=schema)
+            sas.delete_from_table(table)
 
     def iter_tables(self):
         adv = AdvancedApiSession(self)  # no need to enter context
-        url = adv.api_url + "get_schema_names"
-        schemas = self._request("post", url, expected_status=200)["content"]
         url = adv.api_url + "get_table_names"
 
-        for schema in schemas:
-            if schema.startswith("_") or schema in [
-                "topology",
-                "test",
-                "sandbox",
-                "information_schema",
-            ]:
-                continue
-            tables = self._request(
-                "post", url, jsondata={"query": {"schema": schema}}, expected_status=200
-            )["content"]
-            for table in tables:
-                yield {"table": table}
+        tables = self._request(
+            "post", url, jsondata={"query": {}}, expected_status=200
+        )["content"]
+        for table in tables:
+            yield {"table": table}

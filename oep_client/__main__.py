@@ -191,10 +191,10 @@ def test_roundtrip(ctx):
 @main.command("move")
 @click.pass_context
 @click.argument("table")
-@click.argument("target_schema")
-def move_table(ctx, table, target_schema):
+@click.argument("topic")
+def move_table(ctx, table, topic):
     client = ctx.obj["client"]
-    client.move_table(table, target_schema)
+    client.move_table(table, topic)
     logging.info("OK")
 
 
