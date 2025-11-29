@@ -10,8 +10,9 @@ on the OEP are:
 - retrieving a table's metadata
 - deleting a table (that you created)
 
-You can also always just use the API `(TODO: link to documentation)` directly if
-your tasks are more complex.
+You can also always just use the
+[API](https://openenergyplatform.github.io/academy/tutorials/01_api/01_api_download/)
+directly if your tasks are more complex.
 
 ## Notes for Windows Users
 
@@ -40,7 +41,7 @@ and metadata, downloads them again and finally deletes the table.
 
 You can run it either directly from the command prompt using
 
-```
+```bash
 oep-client -t OEP_API_TOKEN test
 ```
 
@@ -59,16 +60,16 @@ The CLI is very handy for standardized tasks as it requires just one command
 line, but is somewhat limited when for instance your input data is not in a very
 specific format. To see avaiblabe command line options, use
 
-```
+```bash
 oep-client --help
 ```
 
 In a python environment, you have more flexibility to prepare / clean your data
 before uploading it.
 
-# Using the CLI
+## Using the CLI
 
-## Creating a table
+### Creating a table
 
 Requires a valid metadata file.
 
@@ -105,7 +106,7 @@ also must be valid
 oep-client -t OEP_API_TOKEN create TABLE_NAME metadata.json
 ```
 
-## Uploading data
+### Uploading data
 
 ```bash
 oep-client -t OEP_API_TOKEN insert TABLE_NAME FILENAME
@@ -117,7 +118,7 @@ if `FILENAME` is a
 - `csv`, you _may_ also specify `--delimiter DELIMITER` and or
   `--encoding ENCODING`
 
-## Updating a table's metadata
+### Updating a table's metadata
 
 This of course requires a valid metadata file.
 
@@ -125,7 +126,7 @@ This of course requires a valid metadata file.
 oep-client -t OEP_API_TOKEN metadata set TABLE_NAME metadata.json
 ```
 
-## Downloading data
+### Downloading data
 
 Note: you do not need an API_TOKEN to downlad data
 
@@ -139,7 +140,7 @@ if `FILENAME` is a
 - `csv`, you _may_ also specify `--delimiter DELIMITER` and or
   `--encoding ENCODING`
 
-## Retrieving a table's metadata
+### Retrieving a table's metadata
 
 Note: you do not need an API_TOKEN to downlad metadata.
 
@@ -147,101 +148,18 @@ Note: you do not need an API_TOKEN to downlad metadata.
 oep-client -t OEP_API_TOKEN metadata get TABLE_NAME FILENAME
 ```
 
-## Deleting a table (that you created)
+### Deleting a table (that you created)
 
 ```bash
 oep-client -t OEP_API_TOKEN drop TABLE_NAME
 ```
 
-## Using the Package in Python
+### Using the Package in Python
 
 All examples assume that you import the package and create a client instance
 first:
 
-```
+```bash
 from oep_client import OepClient
 cl = OepClient(token='API_TOKEN', ...)
 ```
-
-`... TODO`
-
-# More Information - Use the API without the oep-client
-
-This section describes how to upload data to the
-[OEP](https://openenergyplatform.org "OEP") using Python and the REST-API.
-
-## Create and upload data table(s)
-
-- The REST-API can be used with any language than can make HTTP(s) requests.
-
-- Most requests require you to add an authorization header: Authorization:
-  `Token API_TOKEN`, where you substitute `API_TOKEN` with your token.
-
-- All requests (and most responses) will use json data as payload. A paylpad is
-  the actual data content of the request.
-
-- An example is provided below. For it, we use python and the
-  [requests package](https://2.python-requests.org/en/master/ "Python request package").
-  All requests will use a requests session with the authorization header.
-
-```
-import requests
-API_URL = 'https://openenergyplatform.org/api/v0'
-session = requests.Session()
-session.headers = {'Authorization': 'Token %s' % API_TOKEN}
-```
-
-- The requests in the following sections use roughly the same pattern:
-  - Prepare your request payload as a json object
-  - Prepare your request url
-  - Send your request using the correct verb (get, post, put, delete)
-  - Check if the request was successful
-
-### Create a new table
-
-- You need to specify the name of the new table (`TABLE_NAME`), which should be
-  a valid post-gresql table name, without spaces, ideally only containing lower
-  case letters, numbers and underscores.
-
-### make request and check using PUT
-
-res = session.put(url, json=data) res.raise_for_status() # check: throws
-exception if not successful
-
-### Upload data
-
-- To upload data, you must first load it into a json structure as a
-  [list](https://www.w3schools.com/python/python_lists.asp "python lists")
-  representing data rows, each of which is a
-  [dictionary](https://www.w3schools.com/python/python_dictionaries.asp "python dictionary")
-  mapping column names to values.
-
-- In the example, we will use
-  [pandas](https://pypi.org/project/pandas/ "pandas") to read data from an Excel
-  workbook (`WORKBOOK, WORKSHEET`) into a
-  [data frame](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html "data frame")
-  which we will then convert into a json object. Please note that this step will
-  most likely require some modification to accommodate the specifics of your
-  in-put data.
-
-- In addition to that, at the end, you need to load your data into the specified
-  json structure.
-
-- After that, the data can be uploaded making a request to the API:
-
-## load data into dataframe, convert into json
-
-df = pd.read_excel(WORKBOOK, WORKSHEET) records = df.to_json(orient='records')
-records = json.loads(records)
-
-## prepare request payload
-
-data = {'query': records}
-
-## prepare api url
-
-url = API_URL + '/tables/' + TABLE_NAME + '/rows/new'
-
-## make request
-
-res = session.post(url, json=data) res.raise_for_status() # check
