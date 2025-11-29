@@ -57,20 +57,18 @@ class AdvancedApiSession:
             logging.debug("Closed connection: %s", self.connection_id)
             self.connection_id = None
 
-    def _get_query(self, table, schema=None, **kwargs):
-        query = {"schema": schema or self.oepclient.default_schema, "table": table}
+    def _get_query(self, table, **kwargs):
+        query = {"table": table}
         query.update(kwargs)
         return query
 
-    def insert_into_table(self, table, data, schema=None):
+    def insert_into_table(self, table, data):
         """Insert records into table.
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
             data(list): list of records(dict: column_name -> value)
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
         """
         if isinstance(data, pd.DataFrame):
             data = dataframe_to_records(data)
@@ -82,36 +80,31 @@ class AdvancedApiSession:
                 "data must be list or tuple of record dictionaries"
             )
 
-        query = self._get_query(table, schema=schema, values=data)
+        query = self._get_query(table, values=data)
         return self._command("insert", query)
 
-    def select_from_table(self, table, schema=None):
+    def select_from_table(self, table):
         """Select all rows from table.
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
 
         Returns:
             list of records(dict: column_name -> value)
         """
 
-        query = self._get_query(table, schema=schema)
+        query = self._get_query(table)
         self._command("search", query)
         return self._command("cursor/fetchall")
 
-    def delete_from_table(self, table, schema=None):
+    def delete_from_table(self, table):
         """Delete all rows from table (without dropping it).
 
         Args:
             table(str): table name. Must be valid postgres table name,
                 all lowercase, only letters, numbers and underscore
-            schema(str, optional): table schema name.
-                defaults to self.default_schema which is usually "model_draft"
-
         """
 
-        query = self._get_query(table, schema=schema)
+        query = self._get_query(table)
         return self._command("delete", query)

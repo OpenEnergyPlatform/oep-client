@@ -1,7 +1,6 @@
-"""Command line script for OepClient
-"""
+"""Command line script for OepClient"""
 
-__version__ = "0.17.1"
+__version__ = "0.18.0"
 
 import json
 import logging
@@ -17,7 +16,6 @@ from oep_client.oep_client import (
     DEFAULT_HOST,
     DEFAULT_INSERT_RETRIES,
     DEFAULT_PROTOCOL,
-    DEFAULT_SCHEMA,
     TOKEN_ENV_VAR,
     OepClient,
 )
@@ -51,7 +49,6 @@ DEFAULT_ENCODING = "utf-8"
 @click.option("--protocol", default=DEFAULT_PROTOCOL)
 @click.option("--host", default=DEFAULT_HOST)
 @click.option("--api-version", default=DEFAULT_API_VERSION)
-@click.option("--schema", "-s", default=DEFAULT_SCHEMA)
 @click.option("--batch-size", "-b", default=DEFAULT_BATCH_SIZE)
 @click.option("--insert-retries", default=DEFAULT_INSERT_RETRIES)
 def main(
@@ -61,7 +58,6 @@ def main(
     protocol,
     host,
     api_version,
-    schema,
     batch_size,
     insert_retries,
 ):
@@ -76,7 +72,6 @@ def main(
         protocol=protocol,
         host=host,
         api_version=api_version,
-        default_schema=schema,
         batch_size=batch_size,
         insert_retries=insert_retries,
     )
@@ -88,11 +83,14 @@ def main(
 @click.argument("metadata_file", type=click.Path())
 @click.option("--encoding", "-e", default=DEFAULT_ENCODING)
 @click.option("--upload-metadata", "-m", is_flag=True)
-def create_table(ctx, table, metadata_file, encoding, upload_metadata):
+@click.option("--is-sandbox", is_flag=True)
+def create_table(
+    ctx, table, metadata_file, encoding, upload_metadata, is_sandbox: bool = False
+):
     metadata = read_metadata_json(metadata_file, encoding)
     definition = get_schema_definition_from_metadata(metadata)
     client = ctx.obj["client"]
-    client.create_table(table, definition)
+    client.create_table(table, definition, is_sandbox=is_sandbox)
     # automatically upload metadata
     if upload_metadata:
         client.set_metadata(table, metadata)
@@ -184,20 +182,28 @@ def set_metadata(ctx, table, metadata_file, encoding):
 
 @main.command("test")
 @click.pass_context
-@click.argument("test_schema", default="sandbox")
-def test_roundtrip(ctx, test_schema):
+def test_roundtrip(ctx):
     client = ctx.obj["client"]
-    TestRoundtrip().test_roundtrip(client=client, schema=test_schema)
+    TestRoundtrip().test_roundtrip(client=client)
     logging.info("OK")
 
 
-@main.command("move")
+@main.command("publish")
 @click.pass_context
 @click.argument("table")
-@click.argument("target_schema")
-def move_table(ctx, table, target_schema):
+@click.argument("topic")
+def publish_table(ctx, table, topic):
     client = ctx.obj["client"]
-    client.move_table(table, target_schema)
+    client.publish_table(table, topic)
+    logging.info("OK")
+
+
+@main.command("unpublish")
+@click.pass_context
+@click.argument("table")
+def unpublish_table(ctx, table):
+    client = ctx.obj["client"]
+    client.unpublish_table(table)
     logging.info("OK")
 
 
@@ -224,7 +230,7 @@ def delete(ctx, table):
 def iter_tables(ctx):
     client = ctx.obj["client"]
     for item in client.iter_tables():
-        print("%(schema)s.%(table)s" % item)
+        print("%(table)s" % item)
 
 
 if __name__ == "__main__":
