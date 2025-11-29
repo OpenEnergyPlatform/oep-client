@@ -105,6 +105,23 @@ class TestRoundtrip(unittest.TestCase):
         self.assertEqual(len(data_partial), 1)
         self.assertEqual(data_partial[0]["field2"], 2)
 
+        # test count_rows
+        self.assertEqual(client.count_rows(table_name), len(test_data))
+
+        # test publish: must have license
+        metadata = {
+            "resources": [{"licenses": [{"name": "CC0"}]}],
+            "metaMetadata": {"metadataVersion": "OEMetadata-2.0.0"},
+        }
+        client.set_metadata(table_name, metadata)
+        client.publish_table(table_name, "scenario")
+        client.unpublish_table(table_name)
+
+        # delete data
+        client.delete_from_table(table_name)
+        self.assertEqual(client.count_rows(table_name), 0)
+
+        # drop table
         client.drop_table(table_name)
 
 

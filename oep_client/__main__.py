@@ -188,13 +188,22 @@ def test_roundtrip(ctx):
     logging.info("OK")
 
 
-@main.command("move")
+@main.command("publish")
 @click.pass_context
 @click.argument("table")
 @click.argument("topic")
-def move_table(ctx, table, topic):
+def publish_table(ctx, table, topic):
     client = ctx.obj["client"]
-    client.move_table(table, topic)
+    client.publish_table(table, topic)
+    logging.info("OK")
+
+
+@main.command("unpublish")
+@click.pass_context
+@click.argument("table")
+def unpublish_table(ctx, table):
+    client = ctx.obj["client"]
+    client.unpublish_table(table)
     logging.info("OK")
 
 

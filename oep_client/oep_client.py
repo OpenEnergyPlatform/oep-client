@@ -525,9 +525,14 @@ class OepClient:
             rowcount = rec["rowcount"]
         return rowcount
 
-    def move_table(self, table, topic):
+    def publish_table(self, table: str, topic: str):
         """Publish table into topic"""
         url = self._get_table_api_url(table=table) + "move_publish/%s/" % topic
+        return self._request("POST", url, 200)
+
+    def unpublish_table(self, table: str):
+        """Unpublish table"""
+        url = self._get_table_api_url(table=table) + "unpublish"
         return self._request("POST", url, 200)
 
     def delete_from_table(self, table):
