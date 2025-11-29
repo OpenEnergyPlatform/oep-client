@@ -8,7 +8,6 @@ import unittest
 from . import TOKEN_ENV_VAR, OepClient
 from .exceptions import OepClientSideException
 
-SCHEMA = "sandbox"
 MAX_TRIES_FIND_RANDOM_TEST_TABLE = 10
 
 
@@ -32,10 +31,6 @@ TEST_TABLE_DEFINITION = {
     "constraints": [{"constraint_type": "UNIQUE", "columns": ["field1"]}],
 }
 
-logging.basicConfig(
-    format="[%(asctime)s %(levelname)7s] %(message)s", level=logging.INFO
-)
-
 
 class TestRoundtrip(unittest.TestCase):
     @classmethod
@@ -49,7 +44,7 @@ class TestRoundtrip(unittest.TestCase):
 
         cls.client = OepClient(token=token)
 
-    def test_roundtrip(self, client=None, schema=None):
+    def test_roundtrip(self, client=None):
         """
         * create table
         * upload data
@@ -58,7 +53,6 @@ class TestRoundtrip(unittest.TestCase):
         """
 
         client = client or self.client
-        schema = schema or SCHEMA
 
         # generate test data
         test_data = [
@@ -72,16 +66,18 @@ class TestRoundtrip(unittest.TestCase):
         tries_left = MAX_TRIES_FIND_RANDOM_TEST_TABLE
         while tries_left:
             table_name = "test_table_%s" % random.randint(0, 1000000000)
-            if not client.table_exists(table_name, schema=schema):
+            if not client.table_exists(table_name):
                 break
             if not tries_left:
                 raise Exception(
                     "Could not create a random test table name after %d tries"
                     % MAX_TRIES_FIND_RANDOM_TEST_TABLE
                 )
-        tdef = client.create_table(table_name, TEST_TABLE_DEFINITION, schema=schema)
+
+        tdef = client.create_table(table_name, TEST_TABLE_DEFINITION, is_sandbox=True)
         logging.info(tdef)
-        rcount = client.insert_into_table(table_name, test_data, schema=schema)
+
+        rcount = client.insert_into_table(table_name, test_data)
 
         # insert second time should fail because unique constraint
         self.assertRaises(
@@ -89,11 +85,10 @@ class TestRoundtrip(unittest.TestCase):
             client.insert_into_table,
             table_name,
             test_data,
-            schema=schema,
         )
 
         self.assertEqual(rcount, len(test_data))
-        data = client.select_from_table(table_name, schema=schema)
+        data = client.select_from_table(table_name)
         # remove generated id columns
         for row in data:
             del row["id"]
@@ -105,12 +100,29 @@ class TestRoundtrip(unittest.TestCase):
 
         # also test where
         data_partial = client.select_from_table(
-            table_name, schema=schema, where=["field2>1", "field2<3"]
+            table_name, where=["field2>1", "field2<3"]
         )
         self.assertEqual(len(data_partial), 1)
         self.assertEqual(data_partial[0]["field2"], 2)
 
-        client.drop_table(table_name, schema=schema)
+        # test count_rows
+        self.assertEqual(client.count_rows(table_name), len(test_data))
+
+        # test publish: must have license
+        metadata = {
+            "resources": [{"licenses": [{"name": "CC0"}]}],
+            "metaMetadata": {"metadataVersion": "OEMetadata-2.0.0"},
+        }
+        client.set_metadata(table_name, metadata)
+        client.publish_table(table_name, "scenario")
+        client.unpublish_table(table_name)
+
+        # delete data
+        client.delete_from_table(table_name)
+        self.assertEqual(client.count_rows(table_name), 0)
+
+        # drop table
+        client.drop_table(table_name)
 
 
 class TestUtils(unittest.TestCase):
@@ -122,5 +134,5 @@ class TestUtils(unittest.TestCase):
 
     def test_iter_tables(self):
         self.assertTrue(
-            all(set(["schema", "table"]) == set(x) for x in self.client.iter_tables())
+            all(set(["table"]) == set(x) for x in self.client.iter_tables())
         )
