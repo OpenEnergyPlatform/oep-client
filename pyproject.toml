@@ -22,7 +22,7 @@ build-backend = "setuptools.build_meta"
 include = ["oep_client"]
 
 [dependency-groups]
-dev = ["bumpversion>=0.6.0", "pre-commit>=4.5.0"]
+dev = ["bumpversion", "pre-commit"]
 
 [project.scripts]
 oep-client = "oep_client.__main__:main"
