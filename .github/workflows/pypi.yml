@@ -2,21 +2,22 @@ name: publish
 
 on:
   push:
-    branches: master
+    branches:
+      - master
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-          cache: "pip" # caching pip dependencies
-      - run: pip install --upgrade -r requirements.txt
-      - run: python setup.py sdist
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: |
+          cd python_package
+          pip install uv
+          uv build
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
           password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist

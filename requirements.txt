@@ -1,4 +1,0 @@
-# install package itself to install it's dependencies
-.
-# required for setup.py:
-setuptools

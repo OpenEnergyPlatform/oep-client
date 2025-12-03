@@ -1,0 +1,28 @@
+[project]
+name = "oep-client"
+version = "0.18.0"
+description = "client side tool for openenergy platform"
+license = "CC0-1.0"
+authors = [{ name = "Christian Winger", email = "c.winger@oeko.de" }]
+dependencies = ["click", "pandas", "requests"]
+requires-python = ">=3.10"
+readme = "README.md"
+urls = { "Repository" = "https://github.com/wingechr/oep-client" }
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "SPDX-License-Identifier :: CC0-1.0",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["oep_client"]
+
+[dependency-groups]
+dev = ["bumpversion>=0.6.0", "pre-commit>=4.5.0"]
+
+[project.scripts]
+oep-client = "oep_client.__main__:main"
