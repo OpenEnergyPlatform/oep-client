@@ -11,7 +11,6 @@ urls = { "Repository" = "https://github.com/wingechr/oep-client" }
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
-  "SPDX-License-Identifier :: CC0-1.0",
 ]
 
 [build-system]
