@@ -1,6 +1,6 @@
 [project]
 name = "oep-client"
-version = "0.18.0"
+version = "0.18.1"
 description = "client side tool for openenergy platform"
 license = "CC0-1.0"
 authors = [{ name = "Christian Winger", email = "c.winger@oeko.de" }]
