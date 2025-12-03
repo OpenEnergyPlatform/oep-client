@@ -1,7 +1,5 @@
 """Command line script for OepClient"""
 
-__version__ = "0.18.0"
-
 import json
 import logging
 import os
@@ -9,6 +7,7 @@ import sys
 
 import click
 
+from oep_client import __version__
 from oep_client.exceptions import OepApiException
 from oep_client.oep_client import (
     DEFAULT_API_VERSION,
@@ -19,7 +18,7 @@ from oep_client.oep_client import (
     TOKEN_ENV_VAR,
     OepClient,
 )
-from oep_client.test import TestRoundtrip
+from oep_client.tests import TestRoundtrip
 from oep_client.utils import (
     dataframe_to_records,
     get_schema_definition_from_metadata,

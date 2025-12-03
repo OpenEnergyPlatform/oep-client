@@ -1,5 +1,5 @@
-"""Command line script for OepClient
-"""
+"""Command line script for OepClient"""
+
 __version__ = "0.15.0"
 
 import json
